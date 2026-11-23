@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# ================ SayaMusic=======================
+# ================ ZYN MUSIC=======================
 # Only collects env and writes .env with summary UI
 # ===================================================
 
@@ -39,7 +39,7 @@ banner(){ clear; printf "%s" "$(c magenta)"; cat <<'EOF'
              |___/
 
 EOF
-  printf "%s%s%s\n" "$(c bold)" "$(c cyan)Saya Music guided setup" "$(c reset)"
+  printf "%s%s%s\n" "$(c bold)" "$(c cyan)ZYN MUSIC guided setup" "$(c reset)"
   hr
 }
 
@@ -107,7 +107,7 @@ collect_config(){ banner; info "Enter the following values"; printf "\n";
     "API_KEY|$api_key"
 }
 
-final_notes(){ printf "\n"; hr; good ".env saved successfully"; info "Edit: ./.env"; printf "\nThank you for using Saya Music Installer%s\n" "$(c bold)$(c cyan)" "$(c reset)"; }
+final_notes(){ printf "\n"; hr; good ".env saved successfully"; info "Edit: ./.env"; printf "\nThank you for using ZYN MUSIC Installer%s\n" "$(c bold)$(c cyan)" "$(c reset)"; }
 
 main(){ banner; info "Project: $(basename "$SCRIPT_DIR")"; collect_config; final_notes; }
 
