@@ -1,6 +1,9 @@
 # ZYN MUSIC
 import asyncio
 import importlib
+import os
+
+from aiohttp import web
 
 from pyrogram import idle
 from pytgcalls.exceptions import NoActiveGroupCall
@@ -15,6 +18,10 @@ from SayaMusic.utils.cookie_handler import fetch_and_store_cookies
 from config import BANNED_USERS
 
 
+async def health(_request):
+    return web.Response(text="ZYN MUSIC is running", status=200)
+
+
 async def init():
     if (
         not config.STRING1
@@ -25,6 +32,15 @@ async def init():
     ):
         LOGGER(__name__).error("STRING_SESSION is missing. Add a Pyrogram assistant session in your private environment variables.")
         exit()
+
+    # Render Web Services require an HTTP listener; this endpoint reports process health.
+    web_app = web.Application()
+    web_app.router.add_get("/", health)
+    web_app.router.add_get("/health", health)
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", int(os.getenv("PORT", "8080")))
+    await site.start()
 
     #  Try to fetch cookies at startup
     try:
@@ -70,6 +86,7 @@ async def init():
     await idle()
     await app.stop()
     await userbot.stop()
+    await runner.cleanup()
     LOGGER("SayaMusic").info("Stopping ZYN MUSIC bot...")
 
 
