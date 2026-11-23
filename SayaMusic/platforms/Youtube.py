@@ -139,11 +139,30 @@ class YouTubeAPI:
     # === Metadata Fetching ===
     @staticmethod
     def _extract_info_sync(target: str, cookiefile: Optional[str] = None) -> Optional[Dict]:
-        opts = {"quiet": True, "no_warnings": True, "skip_download": True, "noplaylist": True}
+        base_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "noplaylist": True,
+        }
         if cookiefile:
-            opts["cookiefile"] = cookiefile
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            return ydl.extract_info(target, download=False)
+            base_opts["cookiefile"] = cookiefile
+
+        # Retry once with alternate supported YouTube clients when the default
+        # player response cannot be extracted. This does not bypass network blocks.
+        attempts = [
+            {},
+            {"extractor_args": {"youtube": {"player_client": ["web", "mweb", "tv"]}}},
+        ]
+        last_error = None
+        for extra_opts in attempts:
+            try:
+                opts = {**base_opts, **extra_opts}
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    return ydl.extract_info(target, download=False)
+            except Exception as exc:
+                last_error = exc
+        raise last_error
 
     @capture_internal_err
     async def _fetch_video_info(self, query: str, *, use_cache: bool = True) -> Optional[Dict]:
