@@ -1,4 +1,4 @@
-# ZYN MUSIC
+# Saya Music
 from SayaMusic.core.bot import MusicBotClient
 from SayaMusic.core.dir import StorageManager
 from SayaMusic.core.git import git
