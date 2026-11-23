@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 import aiohttp
 import html
 from datetime import datetime
