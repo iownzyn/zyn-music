@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 import time
 
 from pyrogram import filters
