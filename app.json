@@ -1,27 +1,27 @@
 {
-  "name": "Saya Music",
-  "description": "Saya Music is a Telegram music bot prepared for Docker and Railway deployment.",
-  "repository": "https://github.com/shnwazdeveloper/saya-music",
-  "logo": "https://telegra.ph/file/2c6d1a6f78eba6199933a.jpg",
+  "name": "ZYN MUSIC",
+  "description": "ZYN MUSIC Telegram voice-chat music bot, maintained by Zayn Malik and based on Saya Music with permission.",
+  "repository": "https://github.com/iownzyn/zyn-music",
+  "logo": "https://raw.githubusercontent.com/iownzyn/zyn-music/main/SayaMusic/assets/zyn-logo.svg",
   "keywords": [
     "python",
     "telegram",
     "music-bot",
     "pyrogram",
     "py-tgcalls",
-    "railway",
+    "render",
     "docker"
   ],
   "env": {
     "API_ID": {
       "description": "Telegram API ID from https://my.telegram.org.",
       "required": true,
-      "value": "33591348"
+      "value": ""
     },
     "API_HASH": {
       "description": "Telegram API hash from https://my.telegram.org.",
       "required": true,
-      "value": "d138b2ec1432ef7da497e8e3d451140b"
+      "value": ""
     },
     "BOT_TOKEN": {
       "description": "Bot token from BotFather.",
@@ -30,26 +30,26 @@
     },
     "OWNER_ID": {
       "description": "Telegram numeric user ID of the owner.",
-      "required": true,
-      "value": "5940554521"
+      "required": false,
+      "value": "9100108789"
     },
     "OWNER_USERNAME": {
       "description": "Telegram username of the owner (without @).",
       "required": false,
-      "value": "kidzmc"
+      "value": "shadowxtemp"
     },
     "BOT_USERNAME": {
       "description": "Bot username (without @).",
       "required": false,
-      "value": "SexySayaBot"
+      "value": "ZynMusicBot"
     },
     "LOGGER_ID": {
       "description": "Private log group or channel ID where the bot is admin.",
-      "required": true,
-      "value": ""
+      "required": false,
+      "value": "-1004420640566"
     },
     "STRING_SESSION": {
-      "description": "Pyrogram/Kurigram assistant account session string.",
+      "description": "Private Pyrogram/Kurigram assistant session string. Never commit or share it.",
       "required": true,
       "value": ""
     },
@@ -60,7 +60,7 @@
     },
     "COOKIE_URL": {
       "description": "Raw URL to a Netscape-format YouTube cookies.txt file.",
-      "required": true,
+      "required": false,
       "value": ""
     },
     "API_URL": {
@@ -76,12 +76,32 @@
     "DEEP_API": {
       "description": "Optional Deep API key.",
       "required": false,
-      "value": "sk-7af66c8b58d74bf1ad470a8618a8d49f"
+      "value": ""
     },
     "API_KEY": {
       "description": "Optional API key for external downloader API.",
       "required": false,
-      "value": "30DxNexGenBotsc6b677"
+      "value": ""
+    },
+    "OWNER_NAME": {
+      "description": "Owner display name.",
+      "required": false,
+      "value": "𝒁𝒂𝒚𝒏 𝑴𝒂𝒍𝒊𝒌"
+    },
+    "BOT_NAME": {
+      "description": "Bot display name.",
+      "required": false,
+      "value": "𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 🎧"
+    },
+    "SUPPORT_CHANNEL": {
+      "description": "ZYN MUSIC support channel URL.",
+      "required": false,
+      "value": "https://t.me/zynmusicupdates"
+    },
+    "SUPPORT_CHAT": {
+      "description": "ZYN MUSIC support chat URL.",
+      "required": false,
+      "value": "https://t.me/zynmusicupdates"
     }
   }
 }
