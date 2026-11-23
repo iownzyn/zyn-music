@@ -15,7 +15,7 @@ The original ZYN MUSIC logo is available at `SayaMusic/assets/zyn-logo.svg`.
 3. Start the bot: `python -m SayaMusic`.
 
 ## Deploy on Render
-Create a **Background Worker** from this repository, select the `main` branch and use the included `Dockerfile`. Add the environment variables below in Render's Environment tab. Do not deploy as a web service: this is a long-running Telegram worker and does not serve HTTP traffic.
+Create a **Web Service** from this repository, select the `main` branch and use the included `Dockerfile`. Add the environment variables below in Render's Environment tab. The app includes a lightweight `/health` endpoint because Render Web Services expect an HTTP listener; the music bot itself runs as a Telegram client.
 
 ## Required environment variables
 `API_ID`, `API_HASH`, `BOT_TOKEN`, `MONGO_DB_URI`, `STRING_SESSION` and `LOGGER_ID`.
