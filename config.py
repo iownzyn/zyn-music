@@ -48,7 +48,7 @@ TG_VIDEO_FILESIZE_LIMIT = int(getenv("TG_VIDEO_FILESIZE_LIMIT", "1288490189"))
 PLAYLIST_FETCH_LIMIT = int(getenv("PLAYLIST_FETCH_LIMIT", "30"))
 
 # ── External APIs ──────────────────────────────────────────────────────────────
-COOKIE_URL = getenv("COOKIE_URL", "https://pastebin.com/YfK14h8y")  # paste link (raw URL is auto-resolved)
+COOKIE_URL = getenv("COOKIE_URL", "")  # Optional Netscape-format YouTube cookies URL; never use a public shared session.
 API_URL = getenv("API_URL", "https://pvtz.nexgenbots.xyz")
 VIDEO_API_URL = getenv("VIDEO_API_URL", "https://api.video.nexgenbots.xyz")
 API_KEY = getenv("API_KEY", "")
