@@ -201,17 +201,37 @@ def get_final_path_from_info(info: Dict) -> Optional[str]:
 
 
 def download_with_ytdlp_sync(link: str, fmt: str) -> Optional[str]:
-    try:
-        opts = get_ytdlp_base_opts()
-        opts["format"] = fmt
-        with YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(link, download=False)
-            if path := get_final_path_from_info(info):
-                return path
-            ydl.download([link])
-            return get_final_path_from_info(info)
-    except Exception:
-        return None
+    """Download with a preferred format, then retry using a compatible fallback."""
+    formats = [fmt]
+    if fmt.startswith("bestaudio"):
+        formats.append("bestaudio/best")
+    elif "bestvideo" in fmt:
+        formats.append("best[height<=?720][width<=?1280]/best")
+
+    last_error = None
+    for selected_format in dict.fromkeys(formats):
+        try:
+            opts = get_ytdlp_base_opts()
+            opts["format"] = selected_format
+            # Let yt-dlp raise extraction/download errors so the fallback is attempted.
+            opts["ignoreerrors"] = False
+            with YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(link, download=True)
+                if not info:
+                    continue
+                if path := get_final_path_from_info(info):
+                    return path
+        except Exception as exc:
+            last_error = exc
+            LOGGER.warning(
+                "yt-dlp download attempt failed (%s): %s",
+                selected_format,
+                type(exc).__name__,
+            )
+
+    if last_error:
+        LOGGER.error("All yt-dlp format attempts failed: %s", type(last_error).__name__)
+    return None
 
 
 async def run_with_semaphore(coro):
