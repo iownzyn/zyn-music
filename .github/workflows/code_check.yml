@@ -3,7 +3,7 @@ name: Code Quality and Syntax Check
 on:
   push:
     branches:
-      - Master
+      - main
   pull_request:
   schedule:
     - cron: "30 18 * * *"
