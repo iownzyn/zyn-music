@@ -8,9 +8,9 @@ from config import BOT_USERNAME
 repo_caption = """**
  ᴄʟᴏɴᴇ ᴀɴᴅ ᴅᴇᴘʟᴏʏ – 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 🎧 
 
- ᴅᴇᴘʟᴏʏ ᴇᴀsɪʟʏ ᴏɴ Railway ᴡɪᴛʜ Docker
+ ᴅᴇᴘʟᴏʏ ᴇᴀsɪʟʏ ᴏɴ Render ᴡɪᴛʜ Docker
  ᴄʟᴇᴀɴ 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 ʙʀᴀɴᴅɪɴɢ
- ᴅᴏᴄᴋᴇʀ, ᴘʀᴏᴄꜰɪʟᴇ, ᴀɴᴅ Railway ᴄᴏɴꜰɪɢ ʀᴇᴀᴅʏ
+ ᴅᴏᴄᴋᴇʀ, ᴘʀᴏᴄꜰɪʟᴇ, ᴀɴᴅ Render ᴇɴᴠ ᴠᴀʀs ʀᴇᴀᴅʏ
  ʀᴜɴ 24/7 ʟᴀɢ ꜰʀᴇᴇ
 
 ɪꜰ ʏᴏᴜ ꜰᴀᴄᴇ ᴀɴʏ ᴘʀᴏʙʟᴇᴍ, ᴏᴘᴇɴ ᴀɴ ɪꜱꜱᴜᴇ ᴏʀ ᴄʜᴇᴄᴋ ꜱᴜᴘᴘᴏʀᴛ
@@ -25,7 +25,7 @@ async def show_repo(_, msg):
             InlineKeyboardButton(" ꜱᴜᴘᴘᴏʀᴛ", url=config.SUPPORT_CHAT)
         ],
         [
-            InlineKeyboardButton(" Railway", url="https://railway.com/new"),
+            InlineKeyboardButton(" Render", url="https://render.com/"),
             InlineKeyboardButton(" ɢɪᴛʜᴜʙ", url=config.UPSTREAM_REPO)
         ]
     ]
