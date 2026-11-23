@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 n = "\n"
 w = " "
 
