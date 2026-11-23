@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from SayaMusic import app
 
