@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 import os
 from ..logging import LOGGER
 
