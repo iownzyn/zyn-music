@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from SayaMusic import app
@@ -6,10 +6,10 @@ import config
 from config import BOT_USERNAME
 
 repo_caption = """**
- ᴄʟᴏɴᴇ ᴀɴᴅ ᴅᴇᴘʟᴏʏ – Saya Music 
+ ᴄʟᴏɴᴇ ᴀɴᴅ ᴅᴇᴘʟᴏʏ – 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 🎧 
 
  ᴅᴇᴘʟᴏʏ ᴇᴀsɪʟʏ ᴏɴ Railway ᴡɪᴛʜ Docker
- ᴄʟᴇᴀɴ Saya Music ʙʀᴀɴᴅɪɴɢ
+ ᴄʟᴇᴀɴ 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 ʙʀᴀɴᴅɪɴɢ
  ᴅᴏᴄᴋᴇʀ, ᴘʀᴏᴄꜰɪʟᴇ, ᴀɴᴅ Railway ᴄᴏɴꜰɪɢ ʀᴇᴀᴅʏ
  ʀᴜɴ 24/7 ʟᴀɢ ꜰʀᴇᴇ
 
