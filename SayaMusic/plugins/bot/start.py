@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 import asyncio
 import random
 import time
