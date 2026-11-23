@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 import asyncio
 import importlib
 
@@ -50,7 +50,7 @@ async def init():
     for all_module in ALL_MODULES:
         importlib.import_module("SayaMusic.plugins" + all_module)
 
-    LOGGER("SayaMusic.plugins").info("Saya Music modules loaded.")
+    LOGGER("SayaMusic.plugins").info("ZYN MUSIC modules loaded.")
 
     await userbot.start()
     await StreamController.start()
@@ -59,18 +59,18 @@ async def init():
         await StreamController.stream_call("http://docs.evostream.com/sample_content/assets/sintel1m720p.mp4")
     except NoActiveGroupCall:
         LOGGER("SayaMusic").error(
-            "Please turn on the voice chat of your log group/channel.\n\nSaya Music stopped."
+            "Please turn on the voice chat of your log group/channel.\n\nZYN MUSIC stopped."
         )
         exit()
     except:
         pass
 
     await StreamController.decorators()
-    LOGGER("SayaMusic").info("Saya Music bot started successfully.")
+    LOGGER("SayaMusic").info("ZYN MUSIC bot started successfully.")
     await idle()
     await app.stop()
     await userbot.stop()
-    LOGGER("SayaMusic").info("Stopping Saya Music bot...")
+    LOGGER("SayaMusic").info("Stopping ZYN MUSIC bot...")
 
 
 if __name__ == "__main__":
