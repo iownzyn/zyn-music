@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 import os
 import asyncio
 from functools import lru_cache
@@ -74,7 +74,7 @@ async def safe_send(func, *args, **kwargs):
 @app.on_message(filters.command("welcome") & filters.group)
 async def toggle(client, m: Message):
     if len(m.command) != 2:
-        return await m.reply_text("**Usage:**\n⦿/welcome [on|off]\n Saya Music Special Welcome.....")
+        return await m.reply_text("**Usage:**\n⦿/welcome [on|off]\n ZYN MUSIC Special Welcome.....")
     user_id = m.from_user.id if m.from_user else (m.sender_chat.id if m.sender_chat else None)
     if not user_id:
         return
@@ -86,7 +86,7 @@ async def toggle(client, m: Message):
         return await m.reply_text("**sᴏʀʀʏ ᴏɴʟʏ ᴀᴅᴍɪɴs ᴄᴀɴ ᴄʜᴀɴɢᴇ ᴡᴇʟᴄᴏᴍᴇ ɴᴏᴛɪғɪᴄᴀᴛɪᴏɴ sᴛᴀᴛᴜs!**")
     flag = m.command[1].lower()
     if flag not in ("on", "off"):
-        return await m.reply_text("**Usage:**\n⦿/welcome [on|off]\n Saya Music Special Welcome.....")
+        return await m.reply_text("**Usage:**\n⦿/welcome [on|off]\n ZYN MUSIC Special Welcome.....")
     cur = await is_on(m.chat.id)
     if flag == "off" and not cur:
         return await m.reply_text("**ᴡᴇʟᴄᴏᴍᴇ ɴᴏᴛɪғɪᴄᴀᴛɪᴏɴ ᴀʟʀᴇᴀᴅʏ ᴅɪsᴀʙʟᴇᴅ!**")
