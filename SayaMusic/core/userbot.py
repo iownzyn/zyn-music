@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 from os import getenv
 
 from pyrogram import Client
@@ -21,35 +21,35 @@ GROUPS_TO_JOIN = [
 class Userbot:
     def __init__(self):
         self.one = Client(
-            "SayaAssis1",
+            "ZynAssistant1",
             config.API_ID,
             config.API_HASH,
             session_string=str(config.STRING1),
             no_updates=True,
         )
         self.two = Client(
-            "SayaAssis2",
+            "ZynAssistant2",
             config.API_ID,
             config.API_HASH,
             session_string=str(config.STRING2),
             no_updates=True,
         )
         self.three = Client(
-            "SayaAssis3",
+            "ZynAssistant3",
             config.API_ID,
             config.API_HASH,
             session_string=str(config.STRING3),
             no_updates=True,
         )
         self.four = Client(
-            "SayaAssis4",
+            "ZynAssistant4",
             config.API_ID,
             config.API_HASH,
             session_string=str(config.STRING4),
             no_updates=True,
         )
         self.five = Client(
-            "SayaAssis5",
+            "ZynAssistant5",
             config.API_ID,
             config.API_HASH,
             session_string=str(config.STRING5),
@@ -79,7 +79,7 @@ class Userbot:
 
             try:
                 await client.send_message(
-                    config.LOGGER_ID, f"Saya Music assistant {index} started"
+                    config.LOGGER_ID, f"ZYN MUSIC assistant {index} started"
                 )
             except Exception:
                 LOGGER(__name__).error(
@@ -97,7 +97,7 @@ class Userbot:
             LOGGER(__name__).error(f"Failed to start Assistant {index}: {e}")
 
     async def start(self):
-        LOGGER(__name__).info("Starting Saya Music assistants...")
+        LOGGER(__name__).info("Starting ZYN MUSIC assistants...")
         await self.start_assistant(self.one, 1)
         await self.start_assistant(self.two, 2)
         await self.start_assistant(self.three, 3)

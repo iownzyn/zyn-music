@@ -1,4 +1,4 @@
-# ZYN MUSIC configuration; upstream Saya Music attribution retained in LICENSE.
+# ZYN MUSIC configuration; original Saya Music attribution retained in LICENSE.
 import re
 from os import getenv
 from dotenv import load_dotenv
@@ -30,6 +30,7 @@ BOT_TOKEN = _required("BOT_TOKEN")
 
 OWNER_ID = int(getenv("OWNER_ID", "9100108789"))
 OWNER_USERNAME = getenv("OWNER_USERNAME", "shadowxtemp").lstrip("@")
+OWNER_NAME = getenv("OWNER_NAME", "𝒁𝒂𝒚𝒏 𝑴𝒂𝒍𝒊𝒌")
 BOT_USERNAME = getenv("BOT_USERNAME", "ZynMusicBot").lstrip("@")
 BOT_NAME = getenv("BOT_NAME", "𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 🎧")
 ASSUSERNAME = getenv("ASSUSERNAME", "")
