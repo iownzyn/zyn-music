@@ -6,6 +6,9 @@ Telegram voice-chat music bot, rebranded and maintained by 𝒁𝒂𝒚𝒏 𝑴
 - Owner / Maintainer: 𝒁𝒂𝒚𝒏 𝑴𝒂𝒍𝒊𝒌
 - Support: [@zynmusicupdates](https://t.me/zynmusicupdates)
 
+## Branding asset
+The original ZYN MUSIC logo is available at `SayaMusic/assets/zyn-logo.svg`.
+
 ## Start
 `pip install -r requirements.txt` then `python -m SayaMusic`.
 
