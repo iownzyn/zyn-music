@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 import re
 from typing import Union
 
