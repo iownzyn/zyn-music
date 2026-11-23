@@ -137,15 +137,38 @@ class YouTubeAPI:
         return self.base_url + vid if vid else None
 
     # === Metadata Fetching ===
+    @staticmethod
+    def _extract_info_sync(target: str, cookiefile: Optional[str] = None) -> Optional[Dict]:
+        opts = {"quiet": True, "no_warnings": True, "skip_download": True, "noplaylist": True}
+        if cookiefile:
+            opts["cookiefile"] = cookiefile
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            return ydl.extract_info(target, download=False)
+
     @capture_internal_err
     async def _fetch_video_info(self, query: str, *, use_cache: bool = True) -> Optional[Dict]:
         q = self._prepare_link(query)
-        if use_cache and not q.startswith("http"):
+        is_url = q.startswith("http")
+        if use_cache and not is_url:
             res = await cached_youtube_search(q)
-            return res[0] if res else None
-        data = await VideosSearch(q, limit=1).next()
-        result = data.get("result", [])
-        return result[0] if result else None
+            if res:
+                return res[0]
+
+        # VideosSearch often fails on YouTube URLs and can be rate-limited.
+        # Use yt-dlp's extractor for URLs; for search terms use its search prefix.
+        target = q if is_url else f"ytsearch1:{q}"
+        try:
+            info = await asyncio.to_thread(
+                self._extract_info_sync, target, _cookiefile_path()
+            )
+            if info and "entries" in info:
+                entries = info.get("entries") or []
+                info = entries[0] if entries else None
+            return info
+        except Exception:
+            if is_url:
+                raise
+            return None
 
     @capture_internal_err
     async def is_live(self, link: str) -> bool:
