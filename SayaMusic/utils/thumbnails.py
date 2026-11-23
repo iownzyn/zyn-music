@@ -1,4 +1,4 @@
-# Saya Music
+# ZYN MUSIC
 import os
 import re
 import aiofiles
