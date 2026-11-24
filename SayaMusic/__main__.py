@@ -111,10 +111,6 @@ async def init():
         _runtime["ready"] = False
         _runtime["stage"] = "stopping"
         try:
-            await StreamController.stop()
-        except Exception:
-            pass
-        try:
             await app.stop()
         except Exception:
             pass
