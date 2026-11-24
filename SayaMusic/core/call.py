@@ -482,6 +482,18 @@ class Call:
         if config.STRING5:
             await self.five.start()
 
+    async def stop(self) -> None:
+        LOGGER(__name__).info("Stopping PyTgCalls clients...")
+        for client in (self.one, self.two, self.three, self.four, self.five):
+            if client is None:
+                continue
+            try:
+                await client.stop()
+            except Exception as exc:
+                LOGGER(__name__).warning(
+                    "Could not stop a PyTgCalls client (%s)", type(exc).__name__
+                )
+
     @capture_internal_err
     async def ping(self) -> str:
         pings = []
