@@ -10,6 +10,7 @@ from SayaMusic.utils import AdminRightsCheck
 from SayaMusic.utils.database import is_active_chat
 from SayaMusic.utils.decorators.language import languageCB
 from SayaMusic.utils.inline import close_markup
+from SayaMusic.utils.group_admin import is_real_group_admin
 
 
 VOLUME_LEVELS = (50, 75, 100, 125, 150, 175, 200)
@@ -32,6 +33,8 @@ def volume_markup(chat_id: int) -> InlineKeyboardMarkup:
 @app.on_message(filters.command(["volume", "vol"]) & filters.group & ~BANNED_USERS)
 @AdminRightsCheck
 async def volume_command(_, message: Message, language, chat_id: int):
+    if not await is_real_group_admin(_, chat_id, message.from_user.id):
+        return await message.reply_text("Only admins of this group can control playback.")
     if not await is_active_chat(chat_id):
         return await message.reply_text("Nothing is playing right now.")
     return await message.reply_text(
