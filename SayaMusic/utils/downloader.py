@@ -259,33 +259,24 @@ def download_with_ytdlp_sync(link: str, fmt: str, media_type: str) -> Optional[s
 
     last_error = None
     for selected_format in dict.fromkeys(formats):
-        # First use yt-dlp's defaults, then retry with alternate YouTube clients.
-        client_attempts = [
-            {},
-            {"extractor_args": {"youtube": {"player_client": ["web", "mweb", "tv"]}}},
-        ]
-        for client_opts in client_attempts:
-            try:
-                output_dir = provider_download_dir(media_type, "ytdlp")
-                opts = get_ytdlp_base_opts(output_dir)
-                opts.update(client_opts)
-                opts["format"] = selected_format
-                # Let yt-dlp raise extraction/download errors so the fallback is attempted.
-                opts["ignoreerrors"] = False
-                with YoutubeDL(opts) as ydl:
-                    info = ydl.extract_info(link, download=True)
-                    if not info:
-                        continue
+        try:
+            output_dir = provider_download_dir(media_type, "ytdlp")
+            opts = get_ytdlp_base_opts(output_dir)
+            opts["format"] = selected_format
+            # Let yt-dlp raise extraction/download errors so provider fallback can run.
+            opts["ignoreerrors"] = False
+            with YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(link, download=True)
+                if info:
                     if path := get_final_path_from_info(info, output_dir):
                         return path
-            except Exception as exc:
-                last_error = exc
-                LOGGER.warning(
-                    "yt-dlp attempt failed (format=%s, client_retry=%s): %s",
-                    selected_format,
-                    bool(client_opts),
-                    type(exc).__name__,
-                )
+        except Exception as exc:
+            last_error = exc
+            LOGGER.warning(
+                "yt-dlp attempt failed (format=%s): %s",
+                selected_format,
+                type(exc).__name__,
+            )
 
     if last_error:
         LOGGER.error("All yt-dlp format attempts failed: %s", type(last_error).__name__)
