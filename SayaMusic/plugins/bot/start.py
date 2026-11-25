@@ -139,12 +139,21 @@ async def start_pm(client, message: Message, _):
     )
     start_caption += f"\n\n✦ ᴍᴏɴᴛʜʟʏ ᴀᴄᴛɪᴠᴇ ᴜsᴇʀs : {monthly_active:,}"
 
-    await message.reply_video(
-        random.choice(START_VIDS),
-        caption=start_caption,
-        has_spoiler=True,
-        reply_markup=InlineKeyboardMarkup(out),
-    )
+    try:
+        await message.reply_video(
+            random.choice(START_VIDS),
+            caption=start_caption,
+            has_spoiler=True,
+            reply_markup=InlineKeyboardMarkup(out),
+        )
+    except Exception as video_error:
+        # Keep /start usable if the configured welcome video host is unavailable.
+        print(f"Start welcome video failed: {type(video_error).__name__}")
+        await message.reply_text(
+            start_caption,
+            reply_markup=InlineKeyboardMarkup(out),
+            disable_web_page_preview=True,
+        )
 
     if await is_on_off(2):
         username = f"@{message.from_user.username}" if message.from_user.username else "(none)"
@@ -163,15 +172,21 @@ async def start_pm(client, message: Message, _):
 async def start_gp(client, message: Message, _):
     out = start_panel(_)
     uptime = int(time.time() - _boot_)
+    group_start_caption = _["start_1"].format(app.mention, get_readable_time(uptime))
     try:
         await message.reply_video(
             random.choice(START_VIDS),
-            caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
+            caption=group_start_caption,
             has_spoiler=True,
             reply_markup=InlineKeyboardMarkup(out),
         )
-    except:
-        pass
+    except Exception as video_error:
+        print(f"Group start welcome video failed: {type(video_error).__name__}")
+        await message.reply_text(
+            group_start_caption,
+            reply_markup=InlineKeyboardMarkup(out),
+            disable_web_page_preview=True,
+        )
     return await add_served_chat(message.chat.id)
 
 
