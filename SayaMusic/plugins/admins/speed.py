@@ -11,6 +11,7 @@ from SayaMusic.utils import AdminRightsCheck
 from SayaMusic.utils.database import is_active_chat
 from SayaMusic.utils.decorators.language import languageCB
 from SayaMusic.utils.inline import close_markup, speed_markup
+from SayaMusic.utils.group_admin import is_real_group_admin
 
 checker = []
 
@@ -22,6 +23,8 @@ checker = []
 )
 @AdminRightsCheck
 async def playback(cli, message: Message, _, chat_id):
+    if not await is_real_group_admin(cli, chat_id, message.from_user.id):
+        return await message.reply_text("Only admins of this group can control playback.")
     playing = db.get(chat_id)
     if not playing:
         return await message.reply_text(_["queue_2"])
