@@ -30,7 +30,7 @@ from SayaMusic.utils.database import (
 from SayaMusic.utils.decorators import ActualAdminCB, languageCB
 from SayaMusic.utils.group_admin import can_control_playback, is_real_group_admin
 from SayaMusic.utils.formatters import seconds_to_min
-from SayaMusic.utils.inline import close_markup, stream_markup, stream_markup_timer
+from SayaMusic.utils.inline import close_markup, stream_markup, stream_markup_timer, speed_markup
 from SayaMusic.utils.stream.autoclear import auto_clean
 from SayaMusic.utils.thumbnails import get_thumb
 
@@ -90,19 +90,19 @@ async def manage_callback(client, callback: CallbackQuery, _):
             show_alert=True,
         )
 
-    if command not in {"Pause", "Resume", "Stop", "End", "Loop", "Shuffle", "Skip", "Replay", "1", "2", "3", "4"}:
+    if command not in {"Pause", "Resume", "Stop", "End", "Close", "Volume", "Speed", "Loop", "Shuffle", "Skip", "Replay", "1", "2", "3", "4"}:
         return await callback.answer("Unsupported playback control.", show_alert=True)
 
     # Stop/End is always restricted to real group admins, even when group mode
     # is enabled. Other player controls may be shared by the group admin.
     allowed = (
         await is_real_group_admin(app, chat_id, callback.from_user.id)
-        if command in {"Stop", "End"}
+        if command in {"Stop", "End", "Close"}
         else await can_control_playback(app, chat_id, callback.from_user.id, command)
     )
     if not allowed:
         denial = (
-            "Only actual group admins can Stop/End the stream."
+            "Only actual group admins can Stop/End or close the player."
             if command in {"Stop", "End"}
             else "A group admin must enable /groupmode on before members can use this control."
         )
@@ -111,6 +111,26 @@ async def manage_callback(client, callback: CallbackQuery, _):
     if not await is_active_chat(chat_id):
         return await callback.answer(_["general_5"], show_alert=True)
     user_mention = callback.from_user.mention
+
+    if command == "Close":
+        await callback.answer("Player panel closed.")
+        return await callback.message.delete()
+
+    if command == "Volume":
+        from SayaMusic.plugins.admins.volume import volume_markup
+        await callback.answer()
+        return await callback.message.reply_text(
+            "Choose playback volume (50%-200%). Above 100% may cause clipping or distortion.",
+            reply_markup=volume_markup(chat_id),
+        )
+
+    if command == "Speed":
+        await callback.answer()
+        return await callback.message.reply_text(
+            "Choose playback speed:",
+            reply_markup=speed_markup(_, chat_id),
+        )
+
     
     if command == "Pause":
         if not await is_music_playing(chat_id):
