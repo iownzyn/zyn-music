@@ -148,21 +148,11 @@ class YouTubeAPI:
         if cookiefile:
             base_opts["cookiefile"] = cookiefile
 
-        # Retry once with alternate supported YouTube clients when the default
-        # player response cannot be extracted. This does not bypass network blocks.
-        attempts = [
-            {},
-            {"extractor_args": {"youtube": {"player_client": ["web", "mweb", "tv"]}}},
-        ]
-        last_error = None
-        for extra_opts in attempts:
-            try:
-                opts = {**base_opts, **extra_opts}
-                with yt_dlp.YoutubeDL(opts) as ydl:
-                    return ydl.extract_info(target, download=False)
-            except Exception as exc:
-                last_error = exc
-        raise last_error
+        # Use yt-dlp's maintained default YouTube client selection and its
+        # installed JavaScript runtime (Deno in the project Docker image).
+        # Forcing legacy clients can make current YouTube challenges worse.
+        with yt_dlp.YoutubeDL(base_opts) as ydl:
+            return ydl.extract_info(target, download=False)
 
     @capture_internal_err
     async def _fetch_video_info(self, query: str, *, use_cache: bool = True) -> Optional[Dict]:
