@@ -62,12 +62,8 @@ async def manage_callback(client, CallbackQuery, _):
     if not await is_active_chat(chat_id):
         return await CallbackQuery.answer(_["general_5"], show_alert=True)
 
-    try:
-        member = await app.get_chat_member(chat_id, CallbackQuery.from_user.id)
-    except Exception:
-        return await CallbackQuery.answer("Unable to verify your group permissions.", show_alert=True)
-    if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
-        return await CallbackQuery.answer(_["admin_14"], show_alert=True)
+    if not await can_control_playback(app, chat_id, CallbackQuery.from_user.id, "speed"):
+        return await CallbackQuery.answer("Only group admins can change speed unless /groupmode is ON.", show_alert=True)
     playing = db.get(chat_id)
     if not playing:
         return await CallbackQuery.answer(_["queue_2"], show_alert=True)
