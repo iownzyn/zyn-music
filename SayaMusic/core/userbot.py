@@ -76,21 +76,20 @@ class Userbot:
                 except Exception:
                     pass
 
+            me = await client.get_me()
+            client.id, client.name, client.username = me.id, me.first_name, me.username
+            assistantids.append(me.id)
             assistants.append(index)
 
             try:
                 await client.send_message(
                     config.LOGGER_ID, f"ZYN MUSIC assistant {index} started"
                 )
-            except Exception:
-                LOGGER(__name__).error(
-                    f"Assistant {index} can't access the log group. Check permissions!"
+            except Exception as e:
+                # A logging failure must not terminate every other assistant.
+                LOGGER(__name__).warning(
+                    f"Assistant {index} started, but cannot access the log group: {e}"
                 )
-                exit()
-
-            me = await client.get_me()
-            client.id, client.name, client.username = me.id, me.first_name, me.username
-            assistantids.append(me.id)
 
             LOGGER(__name__).info(f"Assistant {index} Started as {client.name}")
 
