@@ -23,9 +23,6 @@ def start_panel(_):
             InlineKeyboardButton(text="Support", url=config.SUPPORT_CHAT),
             InlineKeyboardButton(text="Channel", url=config.SUPPORT_CHANNEL),
         ],
-        [
-            InlineKeyboardButton(text="Source", url=config.UPSTREAM_REPO),
-        ],
     ]
     return buttons
 
@@ -47,9 +44,6 @@ def private_panel(_):
         [
             InlineKeyboardButton(text="Support", url=config.SUPPORT_CHAT),
             InlineKeyboardButton(text="Channel", url=config.SUPPORT_CHANNEL),
-        ],
-        [
-            InlineKeyboardButton(text="Source", url=config.UPSTREAM_REPO),
         ],
     ]
     return buttons
