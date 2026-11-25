@@ -70,11 +70,21 @@ class Userbot:
 
         try:
             await client.start()
-            for group in GROUPS_TO_JOIN:
+
+            async def join_group(group):
                 try:
                     await client.join_chat(group)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    LOGGER(__name__).debug(
+                        "Assistant %s could not join startup group %s: %s",
+                        index, group, type(exc).__name__,
+                    )
+
+            if GROUPS_TO_JOIN:
+                await asyncio.gather(
+                    *(join_group(group) for group in GROUPS_TO_JOIN),
+                    return_exceptions=True,
+                )
 
             me = await client.get_me()
             client.id, client.name, client.username = me.id, me.first_name, me.username
