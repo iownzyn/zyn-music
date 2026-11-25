@@ -528,7 +528,12 @@ class Call:
 
         async def unified_update_handler(client, update: Update) -> None:
             if isinstance(update, StreamEnded):
-                if update.stream_type == StreamEnded.Type.AUDIO:
+                # Advance both audio and video queues when the installed
+                # PyTgCalls version exposes a VIDEO stream-end enum.
+                video_end = getattr(StreamEnded.Type, "VIDEO", None)
+                if update.stream_type == StreamEnded.Type.AUDIO or (
+                    video_end is not None and update.stream_type == video_end
+                ):
                     assistant = await group_assistant(self, update.chat_id)
                     await self.play(assistant, update.chat_id)
             
