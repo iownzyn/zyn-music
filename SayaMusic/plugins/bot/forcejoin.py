@@ -6,8 +6,9 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import config
 from SayaMusic import app
 
+# Only the updates channel is mandatory. The support group remains available
+# as an optional community/support link.
 REQUIRED_CHATS = (
-    ("@zynchatgc", config.SUPPORT_CHAT, "Support Group"),
     ("@zynmusicupdates", config.SUPPORT_CHANNEL, "Updates Channel"),
 )
 
@@ -16,7 +17,7 @@ def force_join_markup():
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("Join Support Group", url=config.SUPPORT_CHAT),
+                InlineKeyboardButton("Support Group", url=config.SUPPORT_CHAT),
                 InlineKeyboardButton("Join Channel", url=config.SUPPORT_CHANNEL),
             ],
             [InlineKeyboardButton("I Joined • Verify", callback_data="forcejoin_verify")],
@@ -50,8 +51,8 @@ async def require_force_join(message):
         return True
     await message.reply_text(
         "🎧 **𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 — Join Check**\n\n"
-        "Bot use karne se pehle Support Group aur Updates Channel join karein. "
-        "Dono join karne ke baad **I Joined • Verify** dabayein.\n\n"
+        "Bot use karne ke liye Updates Channel join karein. "
+        "Support Group optional hai. Join karne ke baad **I Joined • Verify** dabayein.\n\n"
         "Pending: " + ", ".join(missing),
         reply_markup=force_join_markup(),
         disable_web_page_preview=True,
