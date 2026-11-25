@@ -2,6 +2,7 @@
 import asyncio
 import random
 from pyrogram import filters
+from pyrogram.enums import ChatMemberStatus, ChatType
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup
 from config import (
     BANNED_USERS,
@@ -61,12 +62,53 @@ async def unban_assistant(_, callback: CallbackQuery):
 
 
 @app.on_callback_query(filters.regex("stream_admin") & ~BANNED_USERS)
-@ActualAdminCB
 @languageCB
 async def manage_callback(client, callback: CallbackQuery, _):
-    data = callback.data.strip().split(None, 1)[1]
-    command, chat_info = data.split("|", 1)
-    chat_id, counter = parse_chat_info(chat_info)
+    # Playback controls must be authorized against the actual group that owns
+    # this message. Do not use cached admin lists, auth-user shortcuts, or
+    # non-admin mode for these sensitive controls.
+    if not callback.message or callback.message.chat.type not in (
+        ChatType.GROUP,
+        ChatType.SUPERGROUP,
+    ):
+        return await callback.answer(
+            "These playback controls only work inside their original group.",
+            show_alert=True,
+        )
+
+    try:
+        data = callback.data.strip().split(None, 1)[1]
+        command, chat_info = data.split("|", 1)
+        chat_id, counter = parse_chat_info(chat_info)
+    except (IndexError, TypeError, ValueError):
+        return await callback.answer("Invalid playback control.", show_alert=True)
+
+    if callback.message.chat.id != chat_id:
+        return await callback.answer(
+            "This control belongs to another group.",
+            show_alert=True,
+        )
+
+    try:
+        member = await app.get_chat_member(chat_id, callback.from_user.id)
+    except Exception:
+        return await callback.answer(
+            "Unable to verify your group-admin permissions.",
+            show_alert=True,
+        )
+
+    if member.status not in (
+        ChatMemberStatus.ADMINISTRATOR,
+        ChatMemberStatus.OWNER,
+    ):
+        return await callback.answer(
+            "Only admins of this group can control playback.",
+            show_alert=True,
+        )
+
+    if command not in {"Pause", "Resume", "Stop", "End", "Loop", "Shuffle", "Skip", "Replay", "1", "2", "3", "4"}:
+        return await callback.answer("Unsupported playback control.", show_alert=True)
+
     if not await is_active_chat(chat_id):
         return await callback.answer(_["general_5"], show_alert=True)
     user_mention = callback.from_user.mention
