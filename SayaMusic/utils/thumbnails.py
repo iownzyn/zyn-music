@@ -44,7 +44,7 @@ def trim_to_width(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> str:
     return ellipsis
 
 async def get_thumb(videoid: str) -> str:
-    cache_path = os.path.join(CACHE_DIR, f"{videoid}_v5.png")
+    cache_path = os.path.join(CACHE_DIR, f"{videoid}_v6.png")
     if os.path.exists(cache_path):
         return cache_path
 
@@ -98,31 +98,31 @@ async def get_thumb(videoid: str) -> str:
     except OSError:
         title_font = regular_font = brand_font = ImageFont.load_default()
 
-    # Subtle, consistent Zayn × Alfiya signature above each track thumbnail.
-    # The source thumbnail remains track-specific, so different songs retain
-    # their own artwork while sharing the premium project identity.
-    brand_y = PANEL_Y + 19
-    draw.text(
-        (PANEL_X + 332, brand_y),
-        "ZAYN",
-        fill=(42, 34, 48, 255),
-        font=brand_font,
-        anchor="rm",
+    # Clean Pinterest-inspired signature: warm ivory + muted rose, no neon/glow.
+    # Keep each track's own artwork visible and add a consistent Zayn × Alfiya mark.
+    brand_y = PANEL_Y + 20
+    brand_center_x = PANEL_X + (PANEL_W // 2)
+    label = "ZAYN  ×  ALFIYA"
+    label_width = brand_font.getlength(label)
+    badge_box = (
+        int(brand_center_x - label_width / 2 - 25),
+        brand_y - 12,
+        int(brand_center_x + label_width / 2 + 25),
+        brand_y + 20,
     )
-    heart_x, heart_y = PANEL_X + 381, brand_y
-    heart_color = (177, 49, 91, 255)
-    draw.ellipse((heart_x - 10, heart_y - 7, heart_x + 1, heart_y + 4), fill=heart_color)
-    draw.ellipse((heart_x - 1, heart_y - 7, heart_x + 10, heart_y + 4), fill=heart_color)
-    draw.polygon(
-        [(heart_x - 10, heart_y - 2), (heart_x + 10, heart_y - 2), (heart_x, heart_y + 12)],
-        fill=heart_color,
+    draw.rounded_rectangle(
+        badge_box,
+        radius=16,
+        fill=(250, 246, 241, 238),
+        outline=(211, 184, 173, 230),
+        width=1,
     )
     draw.text(
-        (PANEL_X + 430, brand_y),
-        "ALFIYA",
-        fill=(42, 34, 48, 255),
+        (brand_center_x, brand_y + 3),
+        label,
+        fill=(70, 53, 53, 255),
         font=brand_font,
-        anchor="lm",
+        anchor="mm",
     )
 
     thumb = base.resize((THUMB_W, THUMB_H))
