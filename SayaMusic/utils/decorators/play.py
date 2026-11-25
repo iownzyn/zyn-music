@@ -15,6 +15,7 @@ from config import PLAYLIST_IMG_URL, SUPPORT_CHAT, adminlist
 from strings import get_string
 from SayaMusic import YouTube, app
 from SayaMusic.misc import SUDOERS
+from SayaMusic.plugins.bot.forcejoin import require_force_join
 from SayaMusic.utils.database import (
     get_assistant,
     get_cmode,
@@ -48,6 +49,9 @@ def PlayWrapper(command):
                 ]
             )
             return await message.reply_text(_["general_3"], reply_markup=upl)
+
+        if not await require_force_join(message):
+            return
 
         # Count music commands as monthly active usage, not only /start visits.
         try:
