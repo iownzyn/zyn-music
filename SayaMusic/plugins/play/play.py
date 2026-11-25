@@ -585,8 +585,9 @@ async def play_command(
                     "f" if fplay else "d",
                 )
                 await mystic.delete()
+                artwork = await _play_artwork(track_id, details.get("thumb"))
                 await message.reply_photo(
-                    photo=details["thumb"],
+                    photo=artwork,
                     caption=_["play_10"].format(
                         details["title"],
                         details["duration_min"],
