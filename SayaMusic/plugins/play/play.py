@@ -89,15 +89,23 @@ async def play_command(
     playmode,
     url,
     fplay,
+    status_message=None,
 ):
     status_text = _safe_play_status_text(_, channel)
-    try:
-        mystic = await message.reply_text(status_text)
-    except FloodWait as e:
-        await asyncio.sleep(e.value)
-        mystic = await message.reply_text(status_text)
-    except RandomIdDuplicate:
-        mystic = await app.send_message(message.chat.id, status_text)
+    mystic = status_message
+    if mystic:
+        try:
+            await mystic.edit_text(status_text)
+        except Exception:
+            pass
+    else:
+        try:
+            mystic = await message.reply_text(status_text)
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+            mystic = await message.reply_text(status_text)
+        except RandomIdDuplicate:
+            mystic = await app.send_message(message.chat.id, status_text)
 
     plist_id, plist_type, spotify, slider = None, None, None, None
     internal_type, log_label = None, None
