@@ -79,3 +79,10 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - `245dfd96`: refreshed project state after the latest source audit and follow-up changes.
 - Latest checked Code Quality and Syntax Check for `245dfd96` completed successfully: https://github.com/iownzyn/zyn-music/actions/runs/45700622223
 - Despite CI success, the remaining external-asset and live-runtime items above still block the deploy-ready declaration.
+
+## Welcome video asset supplied on 2026-11-26
+- User supplied the original Zayn × Alfiya welcome video and approved a clean premium edit with one correctly placed Zayn name, one Alfiya name, and a heart-shaped music/pause visual between them.
+- Edited deliverable in the current ChatGPT runtime: `/mnt/data/Zayn_Alfiya_Welcome_Clean_Premium.mp4` (22.476 seconds, 960x720, approx. 8.2 MB). This is a session-local file and is not yet hosted at a stable public HTTPS URL or committed as a binary repo asset.
+- `START_VIDEO_URL` / `START_VIDS` config override is already present. Once the edited MP4 is hosted at a stable HTTPS URL, set Render environment variable `START_VIDEO_URL` to that URL; do not replace the current production URL until the new URL is verified.
+- `0880dd93`: private and group `/start` now fall back to a text welcome with the same caption/buttons if video hosting fails, instead of silently failing or breaking /start.
+- The welcome-video asset is approved visually by the user, but integration and live Telegram delivery remain pending until stable hosting and runtime verification.
