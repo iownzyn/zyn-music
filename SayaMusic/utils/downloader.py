@@ -238,11 +238,14 @@ def get_final_path_from_info(info: Dict, output_dir: str = DOWNLOAD_DIR) -> Opti
         p = os.path.join(output_dir, f"{vid}.{ext}")
         if os.path.exists(p):
             return p
-    matches = sorted(
-        glob.glob(os.path.join(output_dir, f"{vid}.*")),
-        key=os.path.getmtime,
-        reverse=True,
-    )
+    matches = [
+        path
+        for path in glob.glob(os.path.join(output_dir, f"{vid}.*"))
+        if os.path.isfile(path)
+        and not path.endswith((".part", ".ytdl", ".temp"))
+        and os.path.getsize(path) > 0
+    ]
+    matches.sort(key=os.path.getmtime, reverse=True)
     return matches[0] if matches else None
 
 
