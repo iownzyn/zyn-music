@@ -38,7 +38,9 @@ async def volume_command(_, message: Message, language, chat_id: int):
     if not await is_active_chat(chat_id):
         return await message.reply_text("Nothing is playing right now.")
     return await message.reply_text(
-        "🎚 Choose playback volume (50%–200%):",
+        "🎚 Choose playback volume (50%–200%):\n"
+        "100% is the normal level. Above 100% may cause clipping or distortion "
+        "depending on the source audio and voice-chat client.",
         reply_markup=volume_markup(chat_id),
     )
 
