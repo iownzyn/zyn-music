@@ -44,7 +44,7 @@ just add <b>c</b> at the beginning of the commands to use them for the channel.
 - /pause : pause the current playing stream.
 - /resume : resume the paused stream.
 - /skip : skip the current playing stream and start streaming the next track in the queue.
-- /end or /stop : clears the queue and ends the current playing stream.
+- /end : clears the queue and ends the current playing stream. The player Stop button is also admin-only.
 - /player : get an interactive player panel.
 - /queue : shows the queued tracks list.
 - /groupmode on/off/status : let group admins choose whether members can use playback controls (Stop/End remain admin-only).
@@ -270,8 +270,9 @@ HELP_20 = """
 <b>v :</b>stands for video play.
 <b>force :</b>stands for force play.
 
-- /play or /vplay : starts streaming the requested track on video chat.
-- /playforce or /vplayforce : stops the ongoing stream and starts streaming the requested track.
+- /play : starts an audio stream.
+- /vplay : starts a video stream in HD (720p when the source supports it).
+- /playforce or /vplayforce : force-start audio or video after stopping the current stream.
 
 """
 
