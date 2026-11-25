@@ -102,3 +102,14 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - `73a1873b`: unified private/group/bot-added welcome video sending; if a saved Telegram file_id is unavailable, /start retries the configured HTTPS video before falling back to text.
 - The premium track card now includes a branded ZAYN-heart-ALFIYA header over each track's own thumbnail. This is a track-specific thumbnail treatment, not AI-generated anime art per track; a true per-track generated anime pipeline remains unimplemented.
 - The final welcome-video asset can be installed without external hosting using the owner-only Telegram workflow documented above. It still requires the owner to send the approved MP4 to @ZynMusicBot and reply `/setstartvideo`; ChatGPT cannot directly inject a Telegram file_id into the bot's database.
+
+## 2026-11-26 continuation — /vplay priority
+- `b9cb2763`: isolated yt-dlp and API downloads into provider-specific directories under separate audio/video caches. This prevents concurrent API and yt-dlp jobs from writing the same filename while racing for the first valid result. Cache lookup checks provider-specific paths first, then the previous media-specific cache and safe legacy cache paths.
+- End-to-end source audit for `/vplay`:
+  - `/vplay` is registered in the group command handler and `PlayWrapper` sets the video flag from the command prefix.
+  - YouTube video requests call `YouTube.download(..., video=True)`; downloaded video is queued with stream type `video`.
+  - `dynamic_media_stream` uses required video and audio tracks, `VideoQuality.HD_720p`, and high audio quality.
+  - Queue-next/skip playback preserves the video stream flag when queue metadata says `video`.
+  - Video download uses yt-dlp with MP4 best-video up to 720p plus best audio, merged to MP4; API video fallback is also available when configured.
+- CI for `b9cb2763` completed successfully: https://github.com/iownzyn/zyn-music/actions/runs/45703615244
+- This is source/CI verification only. Real Telegram voice-chat video playback, API credentials/provider availability, and Render runtime have not been tested from this session. Do not mark /vplay runtime-tested or deploy-ready until those checks pass.
