@@ -11,3 +11,15 @@ async def is_real_group_admin(client, chat_id: int, user_id: int) -> bool:
         ChatMemberStatus.ADMINISTRATOR,
         ChatMemberStatus.OWNER,
     )
+
+
+async def can_control_playback(client, group_id: int, user_id: int, action: str = "") -> bool:
+    """Allow actual group admins always; group members only when group mode is on.
+    Stopping/ending a stream is always reserved for real group admins.
+    """
+    if await is_real_group_admin(client, group_id, user_id):
+        return True
+    if action.lower() in {"stop", "end"}:
+        return False
+    from SayaMusic.utils.database import is_group_control_mode
+    return await is_group_control_mode(group_id)
