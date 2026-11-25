@@ -140,7 +140,11 @@ async def welcome(client, update: ChatMemberUpdated):
     if not avatar:
         avatar = FALLBACK_PIC
 
-    img = build_pic(avatar, user.first_name, user.id, user.username or "No Username")
+    try:
+        img = build_pic(avatar, user.first_name, user.id, user.username or "No Username")
+    except Exception:
+        # Keep welcomes working even if the optional image template/font is missing.
+        img = avatar if avatar and os.path.exists(avatar) else None
 
     members = await safe_send(client.get_chat_members_count, cid) or "?"
 
@@ -152,19 +156,22 @@ async def welcome(client, update: ChatMemberUpdated):
         count=members
     )
 
-    sent = await safe_send(
-        client.send_photo,
-        cid,
-        img,
-        caption=caption,
-        reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(BTN_VIEW, url=f"tg://openmessage?user_id={user.id}"),
-                InlineKeyboardButton(BTN_HELP, callback_data="open_help"),
-            ],
-            [InlineKeyboardButton(BTN_ADD, url=f"https://t.me/{me.username}?startgroup=true")],
-        ])
-    )
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(BTN_VIEW, url=f"tg://openmessage?user_id={user.id}"),
+            InlineKeyboardButton(BTN_HELP, callback_data="open_help"),
+        ],
+        [InlineKeyboardButton(BTN_ADD, url=f"https://t.me/{me.username}?startgroup=true")],
+    ])
+    sent = None
+    if img:
+        sent = await safe_send(
+            client.send_photo, cid, img, caption=caption, reply_markup=keyboard
+        )
+    if not sent:
+        sent = await safe_send(
+            client.send_message, cid, caption, reply_markup=keyboard
+        )
 
     if sent:
         last_messages.setdefault(cid, []).append(sent)
