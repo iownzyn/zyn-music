@@ -1,13 +1,14 @@
 # Saya Music
 from pyrogram import filters
 from pyrogram.types import Message
+from pyrogram.enums import ChatMemberStatus
 
-from config import BANNED_USERS, adminlist
+from config import BANNED_USERS
 from SayaMusic import app
 from SayaMusic.core.call import StreamController
-from SayaMusic.misc import SUDOERS, db
+from SayaMusic.misc import db
 from SayaMusic.utils import AdminRightsCheck
-from SayaMusic.utils.database import is_active_chat, is_nonadmin_chat
+from SayaMusic.utils.database import is_active_chat
 from SayaMusic.utils.decorators.language import languageCB
 from SayaMusic.utils.inline import close_markup, speed_markup
 
@@ -58,11 +59,12 @@ async def manage_callback(client, CallbackQuery, _):
     if not await is_active_chat(chat_id):
         return await CallbackQuery.answer(_["general_5"], show_alert=True)
 
-    is_non_admin = await is_nonadmin_chat(chat_id)
-    if not is_non_admin and CallbackQuery.from_user.id not in SUDOERS:
-        admins = adminlist.get(chat_id) or []
-        if CallbackQuery.from_user.id not in admins:
-            return await CallbackQuery.answer(_["admin_14"], show_alert=True)
+    try:
+        member = await app.get_chat_member(chat_id, CallbackQuery.from_user.id)
+    except Exception:
+        return await CallbackQuery.answer("Unable to verify your group permissions.", show_alert=True)
+    if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+        return await CallbackQuery.answer(_["admin_14"], show_alert=True)
     playing = db.get(chat_id)
     if not playing:
         return await CallbackQuery.answer(_["queue_2"], show_alert=True)
