@@ -86,7 +86,8 @@ def stream_markup_timer(_, chat_id, played, dur):
 
 
 def stream_markup(_, chat_id):
-    return control_buttons(_, chat_id) + [[InlineKeyboardButton(text="Close", callback_data="close")]]
+    # Player panel Close is routed through stream_admin and checked for real group-admin status.
+    return control_buttons(_, chat_id)
 
 
 def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
