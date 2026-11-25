@@ -16,6 +16,7 @@ from SayaMusic.utils.database import (
     is_skipmode,
 )
 from config import SUPPORT_CHAT, adminlist, confirmer
+from SayaMusic.utils.group_admin import can_control_playback
 from strings import get_string
 
 from ..formatters import int_to_alpha
@@ -75,10 +76,16 @@ def AdminRightsCheck(mystic):
             "pause", "resume", "skip", "next", "loop", "shuffle",
             "seek", "seekback", "volume", "vol", "speed", "slow", "playback",
         }
-        group_mode_allows_member = (
-            command_name in shared_control_commands
-            and await is_group_control_mode(message.chat.id)
-        )
+        group_mode_allows_member = False
+        if command_name in shared_control_commands:
+            if not await can_control_playback(
+                client, message.chat.id, message.from_user.id, command_name
+            ):
+                return await message.reply_text(
+                    "Only actual group admins can use playback controls unless /groupmode is ON."
+                )
+            group_mode_allows_member = True
+
         if not is_non_admin and not group_mode_allows_member:
             if message.from_user.id not in SUDOERS:
                 admins = adminlist.get(message.chat.id)
