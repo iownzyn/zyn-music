@@ -470,17 +470,17 @@ class Call:
 
 
     async def start(self) -> None:
-        LOGGER(__name__).info("Starting PyTgCalls Clients...")
-        if config.STRING1:
-            await self.one.start()
-        if config.STRING2:
-            await self.two.start()
-        if config.STRING3:
-            await self.three.start()
-        if config.STRING4:
-            await self.four.start()
-        if config.STRING5:
-            await self.five.start()
+        LOGGER(__name__).info("Starting PyTgCalls clients in parallel...")
+        clients = (self.one, self.two, self.three, self.four, self.five)
+        results = await asyncio.gather(
+            *(client.start() for client in clients if client is not None),
+            return_exceptions=True,
+        )
+        for result in results:
+            if isinstance(result, Exception):
+                LOGGER(__name__).error(
+                    "A PyTgCalls assistant failed to start: %s", result
+                )
 
     async def stop(self) -> None:
         LOGGER(__name__).info("Stopping PyTgCalls clients...")
