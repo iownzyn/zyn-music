@@ -98,3 +98,7 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - Code Quality and Syntax Check for `bdeaadd7` passed all steps (Python compile and JSON validation): https://github.com/iownzyn/zyn-music/actions/runs/45703215267
 - To integrate the approved video without needing a public hosting site: send the approved MP4 to @ZynMusicBot as a video, then reply to that video with `/setstartvideo`. The command is owner-ID restricted. Test /start afterwards. Use `/resetstartvideo` to revert to the configured URL.
 - Current approved local MP4 in the ChatGPT runtime: `/mnt/data/Zayn_Alfiya_Premium_Welcome.mp4` (22.362 sec, H.264 960x720, AAC audio, 7.57 MB). It is not automatically accessible to the Render service until the Telegram file_id is saved via the bot command.
+
+- `73a1873b`: unified private/group/bot-added welcome video sending; if a saved Telegram file_id is unavailable, /start retries the configured HTTPS video before falling back to text.
+- The premium track card now includes a branded ZAYN-heart-ALFIYA header over each track's own thumbnail. This is a track-specific thumbnail treatment, not AI-generated anime art per track; a true per-track generated anime pipeline remains unimplemented.
+- The final welcome-video asset can be installed without external hosting using the owner-only Telegram workflow documented above. It still requires the owner to send the approved MP4 to @ZynMusicBot and reply `/setstartvideo`; ChatGPT cannot directly inject a Telegram file_id into the bot's database.
