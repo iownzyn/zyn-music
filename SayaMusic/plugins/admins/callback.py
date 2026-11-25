@@ -101,10 +101,12 @@ async def manage_callback(client, callback: CallbackQuery, _):
         else await can_control_playback(app, chat_id, callback.from_user.id, command)
     )
     if not allowed:
-        return await callback.answer(
-            "Only group admins can Stop/End. Other controls require group mode ON.",
-            show_alert=True,
+        denial = (
+            "Only actual group admins can Stop/End the stream."
+            if command in {"Stop", "End"}
+            else "A group admin must enable /groupmode on before members can use this control."
         )
+        return await callback.answer(denial, show_alert=True)
 
     if not await is_active_chat(chat_id):
         return await callback.answer(_["general_5"], show_alert=True)
