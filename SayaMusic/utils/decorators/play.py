@@ -67,6 +67,17 @@ def PlayWrapper(command):
         except Exception:
             pass
 
+        # Acknowledge immediately, before metadata lookup or assistant checks.
+        # The play handler edits this same message with the detailed status.
+        try:
+            status_message = await app.send_message(
+                message.chat.id,
+                "╭──────「 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 」\\n│ ✦ ʀᴇǫᴜᴇsᴛ ʀᴇᴄᴇɪᴠᴇᴅ\\n│ ⏳ ᴘʀᴏᴄᴇssɪɴɢ...\\n╰────────────────",
+                reply_to_message_id=message.id,
+            )
+        except Exception:
+            status_message = None
+
         audio_telegram = (
             (message.reply_to_message.audio or message.reply_to_message.voice)
             if message.reply_to_message
@@ -225,7 +236,8 @@ def PlayWrapper(command):
                     pass
 
         return await command(
-            client, message, _, chat_id, video, channel, playmode, url, fplay
+            client, message, _, chat_id, video, channel, playmode, url, fplay,
+            status_message,
         )
 
     return wrapper
