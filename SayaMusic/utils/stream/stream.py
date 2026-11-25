@@ -162,7 +162,7 @@ async def stream(
             if not is_video:
                 fallback = await SoundCloud.search_and_download(title)
                 if fallback:
-                    fallback_details, _ = fallback
+                    fallback_details, fallback_path = fallback
                     return await stream(
                         _,
                         mystic,
