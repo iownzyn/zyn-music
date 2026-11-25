@@ -36,6 +36,41 @@ class SoundAPI:
 
         return info
 
+    async def search_and_download(self, query: str) -> Union[Tuple[Dict[str, Any], str], bool]:
+        """Search SoundCloud as a fallback when YouTube blocks metadata extraction."""
+        query = (query or "").strip()
+        if not query:
+            return False
+
+        def _search(q: str):
+            opts = {
+                "quiet": True,
+                "no_warnings": True,
+                "noplaylist": True,
+                "skip_download": True,
+                "extract_flat": "in_playlist",
+            }
+            with YoutubeDL(opts) as ydl:
+                data = ydl.extract_info(f"scsearch3:{q}", download=False)
+            return (data or {}).get("entries") or []
+
+        try:
+            loop = asyncio.get_running_loop()
+            entries = await loop.run_in_executor(None, _search, query)
+        except Exception:
+            return False
+
+        for entry in entries[:3]:
+            url = entry.get("webpage_url") or entry.get("url")
+            if not url:
+                continue
+            if not str(url).startswith("http"):
+                url = f"https://soundcloud.com/{url.lstrip('/')}"
+            result = await self.download(url)
+            if result:
+                return result
+        return False
+
     async def download(self, url: str) -> Union[Tuple[Dict[str, Any], str], bool]:
         try:
             info = await self._extract_info(url)
