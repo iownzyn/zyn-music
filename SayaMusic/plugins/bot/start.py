@@ -19,6 +19,7 @@ from SayaMusic.utils.database import (
     get_lang,
     get_served_chats,
     get_served_users,
+    get_monthly_active_users,
     is_banned_user,
     is_on_off,
 )
@@ -132,11 +133,15 @@ async def start_pm(client, message: Message, _):
         served_chats_coro, served_users_coro, stats_coro
     )
 
+    monthly_active = await get_monthly_active_users()
+    start_caption = random.choice(AYUV).format(
+        message.from_user.mention, app.mention, UP, DISK, CPU, RAM, len(served_users), len(served_chats)
+    )
+    start_caption += f"\n\n✦ ᴍᴏɴᴛʜʟʏ ᴀᴄᴛɪᴠᴇ ᴜsᴇʀs : {monthly_active:,}"
+
     await message.reply_video(
         random.choice(START_VIDS),
-        caption=random.choice(AYUV).format(
-            message.from_user.mention, app.mention, UP, DISK, CPU, RAM, len(served_users), len(served_chats)
-        ),
+        caption=start_caption,
         has_spoiler=True,
         reply_markup=InlineKeyboardMarkup(out),
     )
