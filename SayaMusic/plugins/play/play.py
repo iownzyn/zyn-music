@@ -416,11 +416,21 @@ async def play_command(
 
         try:
             details, track_id = await YouTube.track(query)
-        except Exception as e:
-            return await mystic.edit_text(f"{_['play_3']}\nʀᴇᴀsᴏɴ: {e}")
-
-        internal_type = "youtube"
-        log_label = "Youtube Track"
+            internal_type = "youtube"
+            log_label = "Youtube Track"
+        except Exception:
+            # YouTube may challenge datacenter requests; try SoundCloud for text searches.
+            fallback = await SoundCloud.search_and_download(query)
+            if not fallback:
+                return await mystic.edit_text(
+                    f"{_['play_3']}\\n"
+                    "YouTube is temporarily restricting this request and "
+                    "SoundCloud did not return a playable match. Try another query."
+                )
+            details, _fallback_path = fallback
+            track_id = details.get("filepath")
+            internal_type = "soundcloud"
+            log_label = "SoundCloud fallback"
 
     if str(playmode) == "Direct":
         if not plist_type:
