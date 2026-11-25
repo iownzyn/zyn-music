@@ -86,3 +86,15 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - `START_VIDEO_URL` / `START_VIDS` config override is already present. Once the edited MP4 is hosted at a stable HTTPS URL, set Render environment variable `START_VIDEO_URL` to that URL; do not replace the current production URL until the new URL is verified.
 - `0880dd93`: private and group `/start` now fall back to a text welcome with the same caption/buttons if video hosting fails, instead of silently failing or breaking /start.
 - The welcome-video asset is approved visually by the user, but integration and live Telegram delivery remain pending until stable hosting and runtime verification.
+
+## Further continuation on 2026-11-26 (after approved premium welcome edit)
+- User approved the premium Zayn × Alfiya welcome-video edit. The final approved ChatGPT file is session-local; it is not yet hosted or committed as a repo binary.
+- `8570100d`: added a subtle ZAYN + heart + ALFIYA premium signature to each track card while retaining each track's own source thumbnail; cache version bumped to v5 so cards regenerate.
+- `14dc578e`: added a warning that playback above 100% can cause clipping/distortion.
+- `f5004518`: API media downloads now write to a temporary .part file and atomically replace the cache target only after a non-empty complete transfer.
+- `7d898a6a`: added MongoDB-backed custom start-video file_id storage helpers.
+- `c0afb121`: added owner-only `/setstartvideo` and `/resetstartvideo` commands; private/group /start and bot-added group welcome use the saved Telegram file_id when configured, with URL fallback when none is saved.
+- `bdeaadd7`: made custom welcome-video lookup resilient to database read errors and allowed video documents as well as native video uploads.
+- Code Quality and Syntax Check for `bdeaadd7` passed all steps (Python compile and JSON validation): https://github.com/iownzyn/zyn-music/actions/runs/45703215267
+- To integrate the approved video without needing a public hosting site: send the approved MP4 to @ZynMusicBot as a video, then reply to that video with `/setstartvideo`. The command is owner-ID restricted. Test /start afterwards. Use `/resetstartvideo` to revert to the configured URL.
+- Current approved local MP4 in the ChatGPT runtime: `/mnt/data/Zayn_Alfiya_Premium_Welcome.mp4` (22.362 sec, H.264 960x720, AAC audio, 7.57 MB). It is not automatically accessible to the Render service until the Telegram file_id is saved via the bot command.
