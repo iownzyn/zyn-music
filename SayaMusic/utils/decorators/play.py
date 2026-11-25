@@ -23,6 +23,7 @@ from SayaMusic.utils.database import (
     get_playtype,
     is_active_chat,
     is_maintenance,
+    add_served_user,
 )
 from SayaMusic.utils.inline import botplaylist_markup
 
@@ -47,6 +48,12 @@ def PlayWrapper(command):
                 ]
             )
             return await message.reply_text(_["general_3"], reply_markup=upl)
+
+        # Count music commands as monthly active usage, not only /start visits.
+        try:
+            await add_served_user(message.from_user.id)
+        except Exception:
+            pass
 
         if await is_maintenance() is False:
             if message.from_user.id not in SUDOERS:
