@@ -431,16 +431,26 @@ class YouTubeAPI:
                 p = await yt_dlp_download(link, type="video", title=await self.title(link))
                 return (p, True) if p else (None, None)
 
-            stdout, _ = await _exec_proc(
+            stdout, stderr = await _exec_proc(
                 "yt-dlp",
                 *(_cookies_args()),
+                "--no-warnings",
+                "--no-playlist",
+                "--socket-timeout",
+                "15",
+                "--retries",
+                "2",
                 "-g",
                 "-f",
-                "best[height<=?720][width<=?1280]",
+                "best[height<=?720][width<=?1280]/best[height<=720]/best",
                 link,
             )
-            if stdout:
-                return stdout.decode().split("\n")[0], None
+            stream_url = stdout.decode("utf-8", errors="ignore").strip().splitlines()
+            if stream_url and stream_url[0].startswith(("https://", "http://")):
+                return stream_url[0], None
+            # Keep the failure actionable in logs rather than returning an empty URL.
+            if stderr:
+                print(f"yt-dlp video stream extraction failed: {stderr.decode('utf-8', errors='ignore')[-500:]}")
             return None, None
 
         p = await yt_dlp_download(link, type="audio", title=await self.title(link))
