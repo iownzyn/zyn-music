@@ -32,6 +32,7 @@ from SayaMusic.utils.inline.start import private_panel, start_panel
 from SayaMusic.utils.inline.help import first_page
 from config import BANNED_USERS, AYUV, HELP_IMG_URL, START_VIDS, STICKERS
 from strings import get_string
+from SayaMusic.plugins.bot.forcejoin import require_force_join
 
 
 @app.on_message(filters.command(["setstartvideo"]) & filters.private)
@@ -127,6 +128,8 @@ async def delete_sticker_after_delay(message: Message, delay: int) -> None:
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
 @LanguageStart
 async def start_pm(client, message: Message, _):
+    if not await require_force_join(message):
+        return
     try:
         await add_served_user(message.from_user.id)
     except Exception:
