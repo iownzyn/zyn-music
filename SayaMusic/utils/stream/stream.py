@@ -160,8 +160,11 @@ async def stream(
         except Exception as exc:
             # YouTube can reject cloud-server extraction. Audio requests may
             # fall back to a separately indexed public SoundCloud result.
-            from SayaMusic.logging import LOGGER
-            LOGGER.warning("YouTube playback failed; trying audio fallback: %s", type(exc).__name__)
+            from SayaMusic.logging import LOGGER as _LOGGER_FACTORY
+            _LOGGER_FACTORY(__name__).warning(
+                "YouTube playback failed; trying audio fallback: %s",
+                type(exc).__name__,
+            )
 
         if not file_path and not is_video:
             fallback = await SoundCloud.search_and_download(title)
