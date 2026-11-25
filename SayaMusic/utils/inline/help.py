@@ -16,7 +16,7 @@ HELP_LABELS = {
     8: "Global Ban",
     9: "Broadcast",
     10: "Games",
-    11: "ChatGPT",
+    11: "Group Mode",
     12: "Info",
     13: "Image",
     14: "Logs",
