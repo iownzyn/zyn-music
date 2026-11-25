@@ -62,3 +62,16 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - Do not change session strings, API credentials or production environment variables while diagnosing playback unless evidence requires it.
 - Never invent test results or say CI success means live playback works.
 - Keep secrets out of commits and project notes.
+
+## Additional work after the first 2026-11-26 checkpoint
+- `e2d08e79`: separated audio and video download caches into media-specific folders so cached audio is not reused for `/vplay`; hardened concurrent download deduplication and provider fallback error handling.
+- `91c51bae`: added `START_VIDEO_URL` / comma-separated `START_VIDS` Render environment override. The final Zayn × Alfiya video URL is not configured because the actual 22.36-second asset was not present in the supplied 78-second screen recording.
+- `411fe14f`: moved welcome-media cleanup into module scope so goodbye photo cleanup can call it safely.
+- `e613a037`: music commands now update user `last_seen`, improving monthly active-user counting beyond /start-only visits.
+- Fresh source audit confirmed `change_volume_call(chat_id, volume)` is used, `/vplay` requests HD 720p, and assistant startup/group joins are concurrent.
+- Fresh audit found the current start video is still the generic configured Catbox asset and the current track card is a designed YouTube thumbnail, not the requested Zayn × Alfiya anime artwork.
+
+## Latest CI snapshot
+- Syntax/quality checks passed for `e2d08e79`, `91c51bae`, and earlier admin/security commits.
+- `411fe14f` was still in progress at last check; `e613a037` had not yet appeared in the latest workflow list.
+- Check the live Actions page before relying on the final status.
