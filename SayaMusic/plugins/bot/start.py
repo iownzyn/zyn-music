@@ -20,6 +20,9 @@ from SayaMusic.utils.database import (
     get_served_chats,
     get_served_users,
     get_monthly_active_users,
+    get_start_video_id,
+    set_start_video_id,
+    clear_start_video_id,
     is_banned_user,
     is_on_off,
 )
@@ -29,6 +32,41 @@ from SayaMusic.utils.inline.start import private_panel, start_panel
 from SayaMusic.utils.inline.help import first_page
 from config import BANNED_USERS, AYUV, HELP_IMG_URL, START_VIDS, STICKERS
 from strings import get_string
+
+
+@app.on_message(filters.command(["setstartvideo"]) & filters.private)
+async def set_start_video_command(client, message: Message):
+    if not message.from_user or message.from_user.id != config.OWNER_ID:
+        return await message.reply_text("Only the configured bot owner can change the welcome video.")
+
+    replied = message.reply_to_message
+    video = getattr(replied, "video", None) if replied else None
+    if not video:
+        return await message.reply_text(
+            "Reply to the uploaded MP4 video with /setstartvideo to save it as the bot welcome video."
+        )
+
+    try:
+        await set_start_video_id(video.file_id)
+    except Exception as exc:
+        print(f"Could not save start video setting: {type(exc).__name__}")
+        return await message.reply_text("Couldn't save the welcome video. Check the database connection.")
+
+    await message.reply_text("Premium Zayn × Alfiya welcome video saved. It will be used by /start.")
+
+
+@app.on_message(filters.command(["resetstartvideo"]) & filters.private)
+async def reset_start_video_command(client, message: Message):
+    if not message.from_user or message.from_user.id != config.OWNER_ID:
+        return await message.reply_text("Only the configured bot owner can reset the welcome video.")
+    try:
+        await clear_start_video_id()
+    except Exception as exc:
+        print(f"Could not reset start video setting: {type(exc).__name__}")
+        return await message.reply_text("Couldn't reset the welcome video. Check the database connection.")
+    await message.reply_text("Custom welcome video cleared. /start will use the configured default URL.")
+
+
 
 
 async def delete_sticker_after_delay(message: Message, delay: int) -> None:
@@ -123,6 +161,7 @@ async def start_pm(client, message: Message, _):
             return
 
     out = private_panel(_)
+    welcome_video = await get_start_video_id() or random.choice(START_VIDS)
     sticker_message = await message.reply_sticker(sticker=random.choice(STICKERS))
     asyncio.create_task(delete_sticker_after_delay(sticker_message, 2))
 
@@ -141,7 +180,7 @@ async def start_pm(client, message: Message, _):
 
     try:
         await message.reply_video(
-            random.choice(START_VIDS),
+            welcome_video,
             caption=start_caption,
             has_spoiler=True,
             reply_markup=InlineKeyboardMarkup(out),
@@ -171,11 +210,12 @@ async def start_pm(client, message: Message, _):
 @LanguageStart
 async def start_gp(client, message: Message, _):
     out = start_panel(_)
+    welcome_video = await get_start_video_id() or random.choice(START_VIDS)
     uptime = int(time.time() - _boot_)
     group_start_caption = _["start_1"].format(app.mention, get_readable_time(uptime))
     try:
         await message.reply_video(
-            random.choice(START_VIDS),
+            welcome_video,
             caption=group_start_caption,
             has_spoiler=True,
             reply_markup=InlineKeyboardMarkup(out),
@@ -220,8 +260,9 @@ async def welcome(client, message: Message):
                     return await app.leave_chat(message.chat.id)
 
                 out = start_panel(_)
+                welcome_video = await get_start_video_id() or random.choice(START_VIDS)
                 await message.reply_video(
-                    random.choice(START_VIDS),
+                    welcome_video,
                     caption=_["start_3"].format(
                         message.from_user.mention,
                         app.mention,
