@@ -35,8 +35,8 @@ async def _play_artwork(video_id, fallback):
     try:
         if video_id:
             return await get_thumb(video_id)
-    except Exception as exc:
-        config.LOGGER.warning("Could not build branded play artwork: %s", type(exc).__name__)
+    except Exception:
+        pass
     return fallback
 
 
