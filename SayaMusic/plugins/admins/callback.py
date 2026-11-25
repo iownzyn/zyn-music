@@ -103,7 +103,7 @@ async def manage_callback(client, callback: CallbackQuery, _):
     if not allowed:
         denial = (
             "Only actual group admins can Stop/End or close the player."
-            if command in {"Stop", "End"}
+            if command in {"Stop", "End", "Close"}
             else "A group admin must enable /groupmode on before members can use this control."
         )
         return await callback.answer(denial, show_alert=True)
