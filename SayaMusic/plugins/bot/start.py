@@ -207,38 +207,84 @@ async def start_pm(client, message: Message, _):
                 await m.edit_text(f"Error: {e}")
             return
 
-    out = private_panel(_)
-    welcome_video = await get_welcome_video()
-    sticker_message = await message.reply_sticker(sticker=random.choice(STICKERS))
-    asyncio.create_task(delete_sticker_after_delay(sticker_message, 2))
-
-    served_chats_coro = get_served_chats()
-    served_users_coro = get_served_users()
-    stats_coro = bot_sys_stats()
-    served_chats, served_users, (UP, CPU, RAM, DISK) = await asyncio.gather(
-        served_chats_coro, served_users_coro, stats_coro
+    # Reply immediately so /start never appears completely silent while
+    # database statistics, stickers, or welcome media are loading.
+    status = await message.reply_text(
+        "╭──────「 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 」\\n"
+        "│ ✦ ᴡᴇʟᴄᴏᴍᴇ!\\n"
+        "│ ⏳ ʟᴏᴀᴅɪɴɢ ʏᴏᴜʀ ᴍᴜsɪᴄ ᴘᴀɴᴇʟ...\\n"
+        "╰────────────────"
     )
 
-    monthly_active = await get_monthly_active_users()
-    start_caption = random.choice(AYUV).format(
-        message.from_user.mention, app.mention, UP, DISK, CPU, RAM, len(served_users), len(served_chats)
-    )
-    start_caption += f"\n\n✦ ᴍᴏɴᴛʜʟʏ ᴀᴄᴛɪᴠᴇ ᴜsᴇʀs : {monthly_active:,}"
+    try:
+        out = private_panel(_)
+        welcome_video = await get_welcome_video()
 
-    await send_welcome_video(
-        message, welcome_video, start_caption, InlineKeyboardMarkup(out)
-    )
+        try:
+            sticker_message = await message.reply_sticker(
+                sticker=random.choice(STICKERS)
+            )
+            asyncio.create_task(delete_sticker_after_delay(sticker_message, 2))
+        except Exception as sticker_error:
+            print(f"Start sticker skipped: {type(sticker_error).__name__}")
 
-    if await is_on_off(2):
-        username = f"@{message.from_user.username}" if message.from_user.username else "(none)"
-        await app.send_message(
-            chat_id=config.LOGGER_ID,
-            text=(
-                f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\n\n"
-                f"<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n"
-                f"<b>ᴜsᴇʀɴᴀᴍᴇ :</b> {username}"
-            ),
+        # Statistics are optional; a database/statistics failure must not
+        # prevent the welcome panel from being delivered.
+        try:
+            served_chats, served_users, (UP, CPU, RAM, DISK) = await asyncio.gather(
+                get_served_chats(),
+                get_served_users(),
+                bot_sys_stats(),
+            )
+            monthly_active = await get_monthly_active_users()
+            start_caption = random.choice(AYUV).format(
+                message.from_user.mention, app.mention, UP, DISK, CPU, RAM,
+                len(served_users), len(served_chats)
+            )
+            start_caption += (
+                f"\\n\\n✦ ᴍᴏɴᴛʜʟʏ ᴀᴄᴛɪᴠᴇ ᴜsᴇʀs : {monthly_active:,}"
+            )
+        except Exception as stats_error:
+            print(f"Start statistics unavailable: {type(stats_error).__name__}")
+            start_caption = (
+                f"Welcome {message.from_user.mention} to {app.mention}!\\n"
+                "Choose an option below to explore the music bot."
+            )
+
+        sent = await send_welcome_video(
+            message, welcome_video, start_caption, InlineKeyboardMarkup(out)
         )
+        if sent:
+            try:
+                await status.delete()
+            except Exception:
+                pass
+        else:
+            await status.edit_text(start_caption, reply_markup=InlineKeyboardMarkup(out))
+
+        if await is_on_off(2):
+            username = f"@{message.from_user.username}" if message.from_user.username else "(none)"
+            try:
+                await app.send_message(
+                    chat_id=config.LOGGER_ID,
+                    text=(
+                        f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\\n\\n"
+                        f"<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\\n"
+                        f"<b>ᴜsᴇʀɴᴀᴍᴇ :</b> {username}"
+                    ),
+                )
+            except Exception as log_error:
+                print(f"Start logger message skipped: {type(log_error).__name__}")
+    except Exception as start_error:
+        print(f"Private /start handler failed: {type(start_error).__name__}: {start_error}")
+        try:
+            await status.edit_text(
+                "Welcome to 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 🎧\\n"
+                "The full welcome panel could not load. Please try /start again.",
+                reply_markup=InlineKeyboardMarkup(private_panel(_)),
+            )
+        except Exception:
+            pass
 
 
 @app.on_message(filters.command(["start"]) & filters.group & ~BANNED_USERS)
