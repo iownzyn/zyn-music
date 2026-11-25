@@ -26,7 +26,18 @@ from SayaMusic.utils.inline import (
     track_markup,
 )
 from SayaMusic.utils.logger import play_logs
+from SayaMusic.utils.thumbnails import get_thumb
 from SayaMusic.utils.stream.stream import stream
+
+
+async def _play_artwork(video_id, fallback):
+    """Use the branded, per-track artwork for normal /play result cards."""
+    try:
+        if video_id:
+            return await get_thumb(video_id)
+    except Exception as exc:
+        config.LOGGER.warning("Could not build branded play artwork: %s", type(exc).__name__)
+    return fallback
 
 
 def _safe_play_status_text(_, channel=None):
@@ -554,8 +565,9 @@ async def play_command(
                     "f" if fplay else "d",
                 )
                 await mystic.delete()
+                artwork = await _play_artwork(track_id, details.get("thumb"))
                 await message.reply_photo(
-                    photo=details["thumb"],
+                    photo=artwork,
                     caption=_["play_10"].format(
                         details["title"].title(),
                         details["duration_min"],
