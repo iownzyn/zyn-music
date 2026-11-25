@@ -428,9 +428,29 @@ async def play_command(
                     "SoundCloud did not return a playable match. Try another query."
                 )
             details, _fallback_path = fallback
-            track_id = details.get("filepath")
-            internal_type = "soundcloud"
-            log_label = "SoundCloud fallback"
+            try:
+                await stream(
+                    _,
+                    mystic,
+                    user_id,
+                    details,
+                    chat_id,
+                    user_name,
+                    message.chat.id,
+                    video=False,
+                    streamtype="soundcloud",
+                    forceplay=bool(fplay),
+                )
+            except Exception as stream_error:
+                err = (
+                    stream_error
+                    if type(stream_error).__name__ == "AssistantErr"
+                    else _["general_2"].format(type(stream_error).__name__)
+                )
+                return await mystic.edit_text(err)
+
+            await mystic.delete()
+            return await play_logs(message, streamtype="SoundCloud fallback")
 
     if str(playmode) == "Direct":
         if not plist_type:
