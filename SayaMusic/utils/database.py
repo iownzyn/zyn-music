@@ -24,6 +24,7 @@ skipdb = mongodb.skipmode
 sudoersdb = mongodb.sudoers
 usersdb = mongodb.tgusersdb
 startsettingsdb = mongodb.startsettings
+controlmodedb = mongodb.controlmode
 
 
 active = []
@@ -684,3 +685,17 @@ async def get_start_video_id():
 
 async def clear_start_video_id():
     await startsettingsdb.delete_one({"key": "start_video_file_id"})
+
+
+async def is_group_control_mode(chat_id: int) -> bool:
+    """Whether non-admin members may use ordinary playback controls in this group."""
+    doc = await controlmodedb.find_one({"chat_id": chat_id}, {"enabled": 1})
+    return bool((doc or {}).get("enabled", False))
+
+
+async def set_group_control_mode(chat_id: int, enabled: bool) -> None:
+    await controlmodedb.update_one(
+        {"chat_id": chat_id},
+        {"$set": {"enabled": bool(enabled)}},
+        upsert=True,
+    )
