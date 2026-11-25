@@ -3,6 +3,7 @@ import os
 import re
 import random
 import uuid
+import time
 import aiofiles
 import aiohttp
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
@@ -157,4 +158,17 @@ async def get_thumb(videoid: str) -> str:
     os.makedirs(CACHE_DIR, exist_ok=True)
     cache_path = os.path.join(CACHE_DIR, f"{videoid}_couple_{uuid.uuid4().hex[:8]}_v7.png")
     bg.convert("RGB").save(cache_path, quality=94)
+
+    # Keep a small rolling cache: old one-off artwork files are not retained forever.
+    try:
+        now = time.time()
+        prefix = f"{videoid}_couple_"
+        for name in os.listdir(CACHE_DIR):
+            if name.startswith(prefix) and name.endswith("_v7.png"):
+                old_path = os.path.join(CACHE_DIR, name)
+                if old_path != cache_path and now - os.path.getmtime(old_path) > 86400:
+                    os.remove(old_path)
+    except OSError:
+        pass
+
     return cache_path
