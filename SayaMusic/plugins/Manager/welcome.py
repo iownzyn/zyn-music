@@ -18,7 +18,8 @@ BTN_HELP = "Help"
 BTN_ADD = "Add Bot"
 
 CAPTION_TXT = """
-**──── ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ────
+**──── 𝐀𝐋𝐅𝐈𝐘𝐀 × 𝐙𝐀𝐘𝐍 ────
+ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂
 {chat_title}
 ▰▰▰▰▰▰▰▰▰▰▰▰▰
  Nᴀᴍᴇ  {mention}
@@ -53,7 +54,22 @@ async def cleanup(path):
 
 @lru_cache(maxsize=1)
 def cached_bg():
-    return Image.open(BG_PATH).convert("RGBA")
+    # The repository's old welcome.png placeholder is empty; create a
+    # deterministic branded canvas when the bundled artwork is unavailable.
+    try:
+        if os.path.exists(BG_PATH) and os.path.getsize(BG_PATH) > 0:
+            return Image.open(BG_PATH).convert("RGBA")
+    except OSError:
+        pass
+    image = Image.new("RGBA", (1280, 720), (28, 35, 49, 255))
+    draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle((28, 28, 1252, 692), radius=42,
+                           fill=(39, 50, 68, 255), outline=(190, 160, 150, 255), width=4)
+    draw.ellipse((790, 95, 1160, 465), fill=(65, 76, 94, 255), outline=(210, 185, 170, 255), width=5)
+    draw.text((90, 95), "WELCOME TO", fill=(238, 228, 220, 255), font=ImageFont.truetype(FONT_PATH, 42))
+    draw.text((90, 165), "ZYN MUSIC", fill=(255, 245, 235, 255), font=ImageFont.truetype(FONT_PATH, 78))
+    draw.text((90, 590), "ALFIYA  ×  ZAYN", fill=(225, 190, 180, 255), font=ImageFont.truetype(FONT_PATH, 34))
+    return image
 
 @lru_cache(maxsize=2)
 def cached_font(size=65):
@@ -69,13 +85,13 @@ def circle(im, size=(835, 839)):
 def build_pic(av, fn, uid, un):
     os.makedirs("downloads", exist_ok=True)
     bg = cached_bg().copy()
-    avatar = circle(Image.open(av))
-    bg.paste(avatar, (1887, 390), avatar)
+    avatar = circle(Image.open(av), size=(330, 330))
+    bg.paste(avatar, (820, 160), avatar)
     d = ImageDraw.Draw(bg)
-    f = cached_font()
-    d.text((421, 715), fn, fill=(242, 242, 242), font=f)
-    d.text((270, 1005), str(uid), fill=(242, 242, 242), font=f)
-    d.text((570, 1308), un, fill=(242, 242, 242), font=f)
+    f = cached_font(42)
+    d.text((90, 340), fn[:24], fill=(242, 242, 242), font=f)
+    d.text((90, 415), f"ID  {uid}", fill=(215, 210, 205), font=ImageFont.truetype(FONT_PATH, 28))
+    d.text((90, 475), f"@{un[:24]}", fill=(215, 210, 205), font=ImageFont.truetype(FONT_PATH, 28))
     path = f"downloads/welcome_{uid}.png"
     bg.save(path)
     return path
