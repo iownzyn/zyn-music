@@ -40,21 +40,29 @@ async def playback(cli, message: Message, _, chat_id):
 @app.on_callback_query(filters.regex("SpeedUP") & ~BANNED_USERS)
 @languageCB
 async def manage_callback(client, CallbackQuery, _):
-    callback_data = CallbackQuery.data.strip()
-    callback_request = callback_data.split(None, 1)[1]
-    chat, speed = callback_request.split("|")
-    chat_id = int(chat)
+    # Callback buttons are bound to the group where they were created.
+    # Reject malformed, forged, or forwarded buttons before touching a stream.
+    try:
+        callback_request = CallbackQuery.data.strip().split(None, 1)[1]
+        chat, speed = callback_request.split("|", 1)
+        chat_id = int(chat)
+    except (IndexError, TypeError, ValueError):
+        return await CallbackQuery.answer("Invalid speed control.", show_alert=True)
+
+    if not CallbackQuery.message or CallbackQuery.message.chat.id != chat_id:
+        return await CallbackQuery.answer("This control belongs to another group.", show_alert=True)
+
+    if speed not in {"0.5", "0.75", "1.0", "1.5", "2.0"}:
+        return await CallbackQuery.answer("Unsupported playback speed.", show_alert=True)
+
     if not await is_active_chat(chat_id):
         return await CallbackQuery.answer(_["general_5"], show_alert=True)
-    is_non_admin = await is_nonadmin_chat(CallbackQuery.message.chat.id)
-    if not is_non_admin:
-        if CallbackQuery.from_user.id not in SUDOERS:
-            admins = adminlist.get(CallbackQuery.message.chat.id)
-            if not admins:
-                return await CallbackQuery.answer(_["admin_13"], show_alert=True)
-            else:
-                if CallbackQuery.from_user.id not in admins:
-                    return await CallbackQuery.answer(_["admin_14"], show_alert=True)
+
+    is_non_admin = await is_nonadmin_chat(chat_id)
+    if not is_non_admin and CallbackQuery.from_user.id not in SUDOERS:
+        admins = adminlist.get(chat_id) or []
+        if CallbackQuery.from_user.id not in admins:
+            return await CallbackQuery.answer(_["admin_14"], show_alert=True)
     playing = db.get(chat_id)
     if not playing:
         return await CallbackQuery.answer(_["queue_2"], show_alert=True)
