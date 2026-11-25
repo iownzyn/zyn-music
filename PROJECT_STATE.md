@@ -138,3 +138,9 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - Existing group member welcome/goodbye handlers and photo fallbacks remain intact. They are not being replaced by the bot's /start welcome video.
 - CI on latest help cleanup commit `b697e07c` was still in progress at time of this note: https://github.com/iownzyn/zyn-music/actions/runs/45705695525
 - Not yet live-tested: random art rendering in Telegram, /groupmode permissions with real non-admin/admin accounts, voice-chat Stop/End behavior, and Render production. Do not deploy yet.
+
+- Additional permission hardening: `ea4c7c46` and `fceb5c06` make every shared playback command verify the actual current group admin or the saved group-mode setting before any legacy non-admin/vote bypass can apply. This prevents a legacy non-admin toggle from defeating the new /groupmode OFF admin-only default.
+- `c95226c6`: improved the callback denial text so members are told to ask an admin to enable /groupmode; Stop/End denial explicitly says only real group admins can use it.
+- Help audit against actual plugin handlers: /encode and /decode replace the unsupported carbon entry; /repo replaces the unsupported downloadrepo entry; /code was removed; /setdescription was fixed with a correctly spelled alias; /deleteall was confirmed present; /logs, /update, /restart, /maintenance and /logger were confirmed present. The non-working ChatGPT placeholder was replaced by the real Group Mode topic.
+- Removed several adult-oriented percentage/media commands from the fun plugin and removed those names from Help; the remaining lighthearted commands are retained.
+- CI for `fceb5c06` passed Python compilation and JSON validation. CI for `c95226c6` had completed both validation steps successfully and was finishing the job at the time of this note.
