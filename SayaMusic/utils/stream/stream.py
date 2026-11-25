@@ -6,7 +6,7 @@ from typing import Union
 from pyrogram.types import InlineKeyboardMarkup
 
 import config
-from SayaMusic import Carbon, YouTube, app
+from SayaMusic import Carbon, SoundCloud, YouTube, app
 from SayaMusic.core.call import StreamController
 from SayaMusic.misc import db
 from SayaMusic.utils.database import add_active_video_chat, is_active_chat
@@ -157,6 +157,24 @@ async def stream(
                 vidid, mystic, video=is_video, videoid=vidid
             )
         except Exception:
+            # YouTube may block datacenter IPs with an anti-bot challenge.
+            # Fall back to a matching public SoundCloud track for audio playback.
+            if not is_video:
+                fallback = await SoundCloud.search_and_download(title)
+                if fallback:
+                    fallback_details, _ = fallback
+                    return await stream(
+                        _,
+                        mystic,
+                        user_id,
+                        fallback_details,
+                        chat_id,
+                        user_name,
+                        original_chat_id,
+                        video=False,
+                        streamtype="soundcloud",
+                        forceplay=forceplay,
+                    )
             raise AssistantErr(_["play_14"])
         if not file_path:
             raise AssistantErr(_["play_14"])
