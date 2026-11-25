@@ -104,21 +104,37 @@ async def get_thumb(videoid: str) -> str:
     brand_center_x = PANEL_X + (PANEL_W // 2)
     label = "ZAYN  ×  ALFIYA"
     label_width = brand_font.getlength(label)
+    badge_width = int(label_width + 82)
     badge_box = (
-        int(brand_center_x - label_width / 2 - 25),
-        brand_y - 12,
-        int(brand_center_x + label_width / 2 + 25),
-        brand_y + 20,
+        brand_center_x - badge_width // 2,
+        brand_y - 14,
+        brand_center_x + badge_width // 2,
+        brand_y + 22,
     )
     draw.rounded_rectangle(
         badge_box,
-        radius=16,
-        fill=(250, 246, 241, 238),
+        radius=18,
+        fill=(250, 246, 241, 242),
         outline=(211, 184, 173, 230),
         width=1,
     )
+
+    # Tiny, original couple mark in a soft storybook/anime-inspired style.
+    avatar_x, avatar_y = brand_center_x - int(label_width / 2) - 23, brand_y + 3
+    draw.ellipse(
+        (avatar_x - 13, avatar_y - 13, avatar_x + 13, avatar_y + 13),
+        fill=(235, 221, 213, 255),
+        outline=(194, 157, 146, 255),
+        width=1,
+    )
+    draw.ellipse((avatar_x - 8, avatar_y - 8, avatar_x - 1, avatar_y + 1), fill=(49, 43, 48, 255))
+    draw.ellipse((avatar_x + 1, avatar_y - 8, avatar_x + 8, avatar_y + 1), fill=(88, 63, 66, 255))
+    draw.ellipse((avatar_x - 7, avatar_y - 4, avatar_x - 2, avatar_y + 4), fill=(239, 211, 195, 255))
+    draw.ellipse((avatar_x + 2, avatar_y - 4, avatar_x + 7, avatar_y + 4), fill=(247, 224, 211, 255))
+    draw.arc((avatar_x - 8, avatar_y + 1, avatar_x - 1, avatar_y + 9), 190, 345, fill=(119, 70, 75, 255), width=1)
+    draw.arc((avatar_x + 1, avatar_y + 1, avatar_x + 8, avatar_y + 9), 190, 345, fill=(119, 70, 75, 255), width=1)
     draw.text(
-        (brand_center_x, brand_y + 3),
+        (brand_center_x + 8, brand_y + 3),
         label,
         fill=(70, 53, 53, 255),
         font=brand_font,
