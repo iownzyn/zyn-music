@@ -3,6 +3,7 @@ import csv
 from io import StringIO, BytesIO
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.enums import ChatMemberStatus
 from SayaMusic import app
 from SayaMusic.utils.admin_filters import admin_filter
 
@@ -39,8 +40,20 @@ async def user_command(_, message):
 
 @app.on_callback_query(filters.regex("^members_"))
 async def members_format_callback(_, callback_query):
-    format_choice = callback_query.data.split("_")[1].lower()
-    
+    # Callback data is public: re-check admin rights on every click.
+    chat_id = callback_query.message.chat.id
+    try:
+        member = await app.get_chat_member(chat_id, callback_query.from_user.id)
+    except Exception:
+        return await callback_query.answer("Unable to verify your permissions.", show_alert=True)
+
+    if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+        return await callback_query.answer("Only group admins can export the member list.", show_alert=True)
+
+    format_choice = callback_query.data.split("_", 1)[1].lower()
+    if format_choice not in ("csv", "txt"):
+        return await callback_query.answer("Invalid export format.", show_alert=True)
+
     await callback_query.answer()
     
     try:
@@ -49,8 +62,6 @@ async def members_format_callback(_, callback_query):
         pass
 
     processing_msg = await callback_query.message.reply_text("Collecting members, please wait...")
-    chat_id = callback_query.message.chat.id
-
     members_list = await collect_members(chat_id, processing_msg)
 
     if format_choice == "csv":
