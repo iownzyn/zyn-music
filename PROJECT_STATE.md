@@ -163,3 +163,15 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - Existing Volume and Speed buttons route into the already-registered `ZynVolume` and `SpeedUP` menu callbacks. Those callbacks independently validate the group and `/groupmode` permissions before changing playback.
 - CI for `1b58973f` passed: https://github.com/iownzyn/zyn-music/actions/runs/45709659396
 - This closes a UI/authorization gap in the player panel, but does not verify live Telegram playback. `/vplay`, assistant voice-chat join latency and the actual welcome video still need production runtime verification. The approved welcome MP4 remains local to the ChatGPT session; it must be sent to the bot and saved with `/setstartvideo` before `/start` can play that exact video.
+
+## 2026-11-26 — mandatory Support Group + Updates Channel verification
+- `8995d9da`: added `SayaMusic/plugins/bot/forcejoin.py` with membership checks for the public Support Group `@zynchatgc` and Updates Channel `@zynmusicupdates`, join buttons, and a Verify callback.
+- `96f357cc`: private `/start` now requests both memberships before showing the normal start flow.
+- `1a7618da`: group playback commands (`/play`, `/vplay` and related commands routed through PlayWrapper) now check both memberships before playback.
+- CI succeeded for all three commits:
+  - https://github.com/iownzyn/zyn-music/actions/runs/45710486550
+  - https://github.com/iownzyn/zyn-music/actions/runs/45710489140
+  - https://github.com/iownzyn/zyn-music/actions/runs/45710495088
+- Deployment prerequisite: add the bot as an administrator in both required chats so Telegram can reliably return membership status for users. If either chat is inaccessible to the bot, verification fails closed and playback remains locked.
+- These are CI/source checks, not live Telegram verification. Confirm the bot is admin in both chats and test a joined and non-joined account after Render deploy.
+
