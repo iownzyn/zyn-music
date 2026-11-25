@@ -182,3 +182,42 @@ async def welcome(client, update: ChatMemberUpdated):
 
     asyncio.create_task(cleanup(avatar))
     asyncio.create_task(cleanup(img))
+
+
+@app.on_chat_member_updated(filters.group, group=-2)
+async def goodbye(client, update: ChatMemberUpdated):
+    """Send a compact goodbye when a regular member leaves or is removed."""
+    new = update.new_chat_member
+    old = update.old_chat_member
+    if not new or not old:
+        return
+    if old.status not in (enums.ChatMemberStatus.MEMBER, enums.ChatMemberStatus.RESTRICTED):
+        return
+    if new.status not in (enums.ChatMemberStatus.LEFT, enums.ChatMemberStatus.BANNED):
+        return
+
+    user = new.user
+    if not user or user.is_bot or not await is_on(update.chat.id):
+        return
+
+    caption = (
+        f"╭──────「 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 」\n"
+        f"│ 👋 ɢᴏᴏᴅʙʏᴇ, {user.mention}\n"
+        f"│\n"
+        f"│ ᴡᴇ ʜᴏᴘᴇ ᴛᴏ sᴇᴇ ʏᴏᴜ ᴀɢᴀɪɴ!\n"
+        f"╰────────────────"
+    )
+    photo_id = None
+    try:
+        if user.photo and hasattr(user.photo, "big_file_id"):
+            photo_id = user.photo.big_file_id
+    except Exception:
+        photo_id = None
+
+    if photo_id:
+        sent = await safe_send(
+            client.send_photo, update.chat.id, photo_id, caption=caption
+        )
+        if sent:
+            return
+    await safe_send(client.send_message, update.chat.id, caption)
