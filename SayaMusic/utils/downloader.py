@@ -56,9 +56,16 @@ def get_cookie_file() -> Optional[str]:
 
 
 def media_download_dir(media_type: str) -> str:
-    """Keep audio and video caches separate so /play cannot feed audio to /vplay."""
+    """Base cache for a media type; audio and video never share cache entries."""
     folder = "video" if media_type == "video" else "audio"
     path = os.path.join(DOWNLOAD_DIR, folder)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def provider_download_dir(media_type: str, provider: str) -> str:
+    """Isolate API and yt-dlp output so racing providers cannot overwrite each other."""
+    path = os.path.join(media_download_dir(media_type), provider)
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -67,15 +74,21 @@ def find_cached_file(video_id: str, media_type: str) -> Optional[str]:
     if not video_id:
         return None
     extensions = (
-        ("mp4", "mkv") if media_type == "video"
+        ("mp4", "mkv", "webm") if media_type == "video"
         else ("mp3", "m4a", "webm", "opus")
     )
-    # Prefer the new media-specific cache; also accept safe legacy extensions.
-    directories = (media_download_dir(media_type), DOWNLOAD_DIR)
+    # Prefer provider-isolated caches, then the previous media-specific layout,
+    # and finally safe legacy files in the original downloads directory.
+    directories = (
+        provider_download_dir(media_type, "ytdlp"),
+        provider_download_dir(media_type, "api"),
+        media_download_dir(media_type),
+        DOWNLOAD_DIR,
+    )
     for directory in directories:
         for ext in extensions:
             path = os.path.join(directory, f"{video_id}.{ext}")
-            if os.path.exists(path) and os.path.getsize(path) > 0:
+            if os.path.isfile(path) and os.path.getsize(path) > 0:
                 return path
     return None
 
@@ -181,7 +194,7 @@ async def api_download_audio(link: str) -> Optional[str]:
                 dl_url = data.get("link")
                 fmt = data.get("format", "webm")
                 safe_fmt = re.sub(r"[^a-zA-Z0-9]", "", str(fmt)) or "webm"
-                out_path = os.path.join(media_download_dir("audio"), f"{vid}.{safe_fmt}")
+                out_path = os.path.join(provider_download_dir("audio", "api"), f"{vid}.{safe_fmt}")
                 return await download_file(dl_url, out_path)
     except Exception:
         return None
@@ -210,7 +223,7 @@ async def api_download_video(link: str) -> Optional[str]:
                 dl_url = data.get("link")
                 fmt = data.get("format", "mp4")
                 safe_fmt = re.sub(r"[^a-zA-Z0-9]", "", str(fmt)) or "mp4"
-                out_path = os.path.join(media_download_dir("video"), f"{vid}.{safe_fmt}")
+                out_path = os.path.join(provider_download_dir("video", "api"), f"{vid}.{safe_fmt}")
                 return await download_file(dl_url, out_path)
     except Exception:
         return None
@@ -250,7 +263,7 @@ def download_with_ytdlp_sync(link: str, fmt: str, media_type: str) -> Optional[s
         ]
         for client_opts in client_attempts:
             try:
-                output_dir = media_download_dir(media_type)
+                output_dir = provider_download_dir(media_type, "ytdlp")
                 opts = get_ytdlp_base_opts(output_dir)
                 opts.update(client_opts)
                 opts["format"] = selected_format
