@@ -175,3 +175,10 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - Deployment prerequisite: add the bot as an administrator in both required chats so Telegram can reliably return membership status for users. If either chat is inaccessible to the bot, verification fails closed and playback remains locked.
 - These are CI/source checks, not live Telegram verification. Confirm the bot is admin in both chats and test a joined and non-joined account after Render deploy.
 
+## 2026-11-26 — video playback and assistant latency follow-up
+- `cd203c93`: YouTube video direct-stream extraction now uses bounded socket/retry settings, a fallback format selector, validates that yt-dlp returned an HTTP(S) URL, and logs a concise extraction failure.
+- `57c1c479`: queue advancement now handles AUDIO and, when exposed by the installed PyTgCalls build, VIDEO StreamEnded events.
+- `712e4495`: removed an unnecessary one-second delay before the assistant joins a group voice chat; join-request approval path remains direct.
+- These are source/CI improvements. They do not prove a live YouTube URL, assistant session, group permissions, or Render runtime is healthy.
+- Welcome video: `/setstartvideo` already saves a Telegram video file_id in MongoDB when the owner replies to an uploaded MP4 with the command. The local MP4 assets in the ChatGPT workspace are not automatically uploaded to Telegram or saved in the bot database. Owner-side Telegram action is still required.
+
