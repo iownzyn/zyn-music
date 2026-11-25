@@ -44,7 +44,7 @@ def trim_to_width(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> str:
     return ellipsis
 
 async def get_thumb(videoid: str) -> str:
-    cache_path = os.path.join(CACHE_DIR, f"{videoid}_v4.png")
+    cache_path = os.path.join(CACHE_DIR, f"{videoid}_v5.png")
     if os.path.exists(cache_path):
         return cache_path
 
@@ -94,8 +94,36 @@ async def get_thumb(videoid: str) -> str:
     try:
         title_font = ImageFont.truetype("SayaMusic/assets/thumb/font2.ttf", 32)
         regular_font = ImageFont.truetype("SayaMusic/assets/thumb/font.ttf", 18)
+        brand_font = ImageFont.truetype("SayaMusic/assets/thumb/font2.ttf", 19)
     except OSError:
-        title_font = regular_font = ImageFont.load_default()
+        title_font = regular_font = brand_font = ImageFont.load_default()
+
+    # Subtle, consistent Zayn × Alfiya signature above each track thumbnail.
+    # The source thumbnail remains track-specific, so different songs retain
+    # their own artwork while sharing the premium project identity.
+    brand_y = PANEL_Y + 19
+    draw.text(
+        (PANEL_X + 332, brand_y),
+        "ZAYN",
+        fill=(42, 34, 48, 255),
+        font=brand_font,
+        anchor="rm",
+    )
+    heart_x, heart_y = PANEL_X + 381, brand_y
+    heart_color = (177, 49, 91, 255)
+    draw.ellipse((heart_x - 10, heart_y - 7, heart_x + 1, heart_y + 4), fill=heart_color)
+    draw.ellipse((heart_x - 1, heart_y - 7, heart_x + 10, heart_y + 4), fill=heart_color)
+    draw.polygon(
+        [(heart_x - 10, heart_y - 2), (heart_x + 10, heart_y - 2), (heart_x, heart_y + 12)],
+        fill=heart_color,
+    )
+    draw.text(
+        (PANEL_X + 430, brand_y),
+        "ALFIYA",
+        fill=(42, 34, 48, 255),
+        font=brand_font,
+        anchor="lm",
+    )
 
     thumb = base.resize((THUMB_W, THUMB_H))
     tmask = Image.new("L", thumb.size, 0)
