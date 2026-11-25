@@ -12,6 +12,7 @@ from SayaMusic.utils.database import (
     is_active_chat,
     is_maintenance,
     is_nonadmin_chat,
+    is_group_control_mode,
     is_skipmode,
 )
 from config import SUPPORT_CHAT, adminlist, confirmer
@@ -64,7 +65,21 @@ def AdminRightsCheck(mystic):
         if not await is_active_chat(chat_id):
             return await message.reply_text(_["general_5"])
         is_non_admin = await is_nonadmin_chat(message.chat.id)
-        if not is_non_admin:
+        command_name = (message.command[0] if message.command else "").lower().lstrip("/")
+        if command_name.startswith("c") and command_name[1:] in {
+            "pause", "resume", "skip", "next", "loop", "shuffle",
+            "seek", "seekback", "volume", "vol", "speed", "slow", "playback",
+        }:
+            command_name = command_name[1:]
+        shared_control_commands = {
+            "pause", "resume", "skip", "next", "loop", "shuffle",
+            "seek", "seekback", "volume", "vol", "speed", "slow", "playback",
+        }
+        group_mode_allows_member = (
+            command_name in shared_control_commands
+            and await is_group_control_mode(message.chat.id)
+        )
+        if not is_non_admin and not group_mode_allows_member:
             if message.from_user.id not in SUDOERS:
                 admins = adminlist.get(message.chat.id)
                 if not admins:
