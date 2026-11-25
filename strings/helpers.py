@@ -103,7 +103,7 @@ HELP_7 = """
 <b><u>extra :</u></b>
 Handy utilities that aren't music-related.
 
-- /carbon  generates a carbon code image from a code snippet.
+- /encode and /decode : encode or decode text.
 - /speedtest  measures the internet speed.
 - /webdl  enter the link of a website after the command to get the source code of that website.
 - /tgm  uploads a photo (under 5mb) to the cloud and provides a link.
@@ -282,7 +282,7 @@ HELP_21 = """
 
 - /allrepo  enter the github username after the command to get all repositories of that account.
 - /pypi  enter the project name after the command to get stats of that project [project = github repositories].
-- /downloadrepo  enter the repository link after the command to download the repository.
+- /repo : show the project's GitHub repository information.
 
 """
 
@@ -377,7 +377,6 @@ HELP_29 = """
 these are the commands for text editing or designing:
 
 - /font or /fonts  enter the text after the command to generate font effects.
-- /code  enter the text after the command to format it as code.
 - /genpw  to generate a strong password.
 - /write  enter the text after the command to write in a notebook style.
 - /qr  enter the text after the command to generate a qr code of the text.
