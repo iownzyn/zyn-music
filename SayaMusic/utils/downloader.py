@@ -128,19 +128,34 @@ async def close_http_session() -> None:
 async def download_file(url: str, out_path: str) -> Optional[str]:
     if not url:
         return None
+
+    # Write to a temporary file and atomically publish only complete downloads.
+    # This prevents a failed API transfer from becoming a poisoned cache hit.
+    temp_path = f"{out_path}.part"
     try:
+        os.makedirs(os.path.dirname(out_path) or DOWNLOAD_DIR, exist_ok=True)
         session = await get_http_session()
         async with session.get(url) as resp:
             if resp.status != 200:
                 return None
-            async with aiofiles.open(out_path, "wb") as f:
+            async with aiofiles.open(temp_path, "wb") as file:
                 async for chunk in resp.content.iter_chunked(CHUNK_SIZE):
-                    if not chunk:
-                        break
-                    await f.write(chunk)
-        return out_path if os.path.exists(out_path) else None
-    except Exception:
+                    if chunk:
+                        await file.write(chunk)
+
+        if not os.path.exists(temp_path) or os.path.getsize(temp_path) <= 0:
+            return None
+        os.replace(temp_path, out_path)
+        return out_path
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        LOGGER.warning("API media download failed: %s", type(exc).__name__)
         return None
+    finally:
+        with contextlib.suppress(OSError):
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
 
 
 async def api_download_audio(link: str) -> Optional[str]:
