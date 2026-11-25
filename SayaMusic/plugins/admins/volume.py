@@ -62,12 +62,8 @@ async def volume_callback(_, query, language):
     if not await is_active_chat(chat_id):
         return await query.answer("Nothing is playing right now.", show_alert=True)
 
-    try:
-        member = await app.get_chat_member(chat_id, query.from_user.id)
-    except Exception:
-        return await query.answer("Unable to verify your group permissions.", show_alert=True)
-    if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
-        return await query.answer("Only group admins can change volume.", show_alert=True)
+    if not await can_control_playback(app, chat_id, query.from_user.id, "volume"):
+        return await query.answer("Only group admins can change volume unless /groupmode is ON.", show_alert=True)
 
     try:
         await StreamController.set_volume(chat_id, volume)
