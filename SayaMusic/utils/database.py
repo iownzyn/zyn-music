@@ -23,6 +23,7 @@ playtypedb = mongodb.playtypedb
 skipdb = mongodb.skipmode
 sudoersdb = mongodb.sudoers
 usersdb = mongodb.tgusersdb
+startsettingsdb = mongodb.startsettings
 
 
 active = []
@@ -664,3 +665,22 @@ async def remove_banned_user(user_id: int):
     if not is_gbanned:
         return
     return await blockeddb.delete_one({"user_id": user_id})
+
+
+async def set_start_video_id(file_id: str):
+    if not file_id:
+        raise ValueError("A Telegram video file_id is required.")
+    await startsettingsdb.update_one(
+        {"key": "start_video_file_id"},
+        {"$set": {"value": file_id}},
+        upsert=True,
+    )
+
+
+async def get_start_video_id():
+    setting = await startsettingsdb.find_one({"key": "start_video_file_id"})
+    return setting.get("value") if setting else None
+
+
+async def clear_start_video_id():
+    await startsettingsdb.delete_one({"key": "start_video_file_id"})
