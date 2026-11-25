@@ -36,6 +36,21 @@ WELCOME_LIMIT = 5
 
 last_messages = {}
 
+
+async def cleanup(path):
+    """Remove generated/downloaded welcome media without touching bundled assets."""
+    if not path or not os.path.exists(path):
+        return
+    try:
+        resolved = os.path.abspath(path)
+        assets_dir = os.path.abspath("SayaMusic/assets")
+        if os.path.commonpath((resolved, assets_dir)) == assets_dir:
+            return
+        os.remove(resolved)
+    except (OSError, ValueError):
+        pass
+
+
 @lru_cache(maxsize=1)
 def cached_bg():
     return Image.open(BG_PATH).convert("RGBA")
@@ -179,13 +194,6 @@ async def welcome(client, update: ChatMemberUpdated):
             old_msg = last_messages[cid].pop(0)
             if old_msg:
                 await safe_send(old_msg.delete)
-
-    async def cleanup(path):
-        if path and os.path.exists(path) and not os.path.abspath(path).startswith(os.path.abspath("SayaMusic/assets")):
-            try:
-                os.remove(path)
-            except:
-                pass
 
     asyncio.create_task(cleanup(avatar))
     asyncio.create_task(cleanup(img))
