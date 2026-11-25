@@ -62,7 +62,6 @@ async def set_start_video_command(client, message: Message):
     await message.reply_text("Premium Zayn × Alfiya welcome video saved. It will be used by /start.")
 
 
-@app.on_message(filters.command(["resetstartvideo"]) & filters.private)
 async def get_welcome_video():
     try:
         saved_video = await get_start_video_id()
@@ -103,6 +102,7 @@ async def send_welcome_video(message: Message, video, caption: str, reply_markup
     )
 
 
+@app.on_message(filters.command(["resetstartvideo"]) & filters.private)
 async def reset_start_video_command(client, message: Message):
     if not message.from_user or message.from_user.id != config.OWNER_ID:
         return await message.reply_text("Only the configured bot owner can reset the welcome video.")
@@ -245,7 +245,7 @@ async def start_pm(client, message: Message, _):
 @LanguageStart
 async def start_gp(client, message: Message, _):
     out = start_panel(_)
-    welcome_video = await get_start_video_id() or random.choice(START_VIDS)
+    welcome_video = await get_welcome_video()
     uptime = int(time.time() - _boot_)
     group_start_caption = _["start_1"].format(app.mention, get_readable_time(uptime))
     await send_welcome_video(
@@ -284,7 +284,7 @@ async def welcome(client, message: Message):
                     return await app.leave_chat(message.chat.id)
 
                 out = start_panel(_)
-                welcome_video = await get_start_video_id() or random.choice(START_VIDS)
+                welcome_video = await get_welcome_video()
                 await send_welcome_video(
                     message,
                     welcome_video,
