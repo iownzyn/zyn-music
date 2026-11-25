@@ -10,24 +10,16 @@ BUTTON = InlineKeyboardMarkup([[InlineKeyboardButton("ꜱᴜᴘᴘᴏʀᴛ", url
 
 MEDIA = {
     "cutie": "https://graph.org/file/24375c6e54609c0e4621c.mp4",
-    "horny": "https://graph.org/file/eaa834a1cbfad29bd1fe4.mp4",
     "hot": "https://graph.org/file/745ba3ff07c1270958588.mp4",
-    "sexy": "https://graph.org/file/58da22eb737af2f8963e6.mp4",
     "gay": "https://graph.org/file/850290f1f974c5421ce54.mp4",
     "lesbian": "https://graph.org/file/ff258085cf31f5385db8a.mp4",
-    "boob": "https://i.gifer.com/8ZUg.gif",
-    "cock": "https://telegra.ph/file/423414459345bf18310f5.gif",
 }
 
 TEMPLATES = {
     "cutie": " {mention} ɪꜱ {percent}% ᴄᴜᴛᴇ ʙᴀʙʏ",
-    "horny": " {mention} ɪꜱ {percent}% ʜᴏʀɴʏ!",
     "hot": " {mention} ɪꜱ {percent}% ʜᴏᴛ!",
-    "sexy": " {mention} ɪꜱ {percent}% ꜱᴇxʏ!",
     "gay": " {mention} ɪꜱ {percent}% ɢᴀʏ!",
     "lesbian": " {mention} ɪꜱ {percent}% ʟᴇꜱʙɪᴀɴ!",
-    "boob": " {mention}ꜱ ʙᴏᴏʙ ꜱɪᴢᴇ ɪꜱ {percent}!",
-    "cock": " {mention} ᴄᴏᴄᴋ ꜱɪᴢᴇ ɪꜱ {percent}ᴄᴍ!",
 }
 
 
@@ -59,5 +51,5 @@ async def handle_percentage_command(_, message: Message):
     )
 
 
-for cmd in ["cutie", "horny", "hot", "sexy", "gay", "lesbian", "boob", "cock"]:
+for cmd in ["cutie", "hot", "gay", "lesbian"]:
     app.on_message(filters.command(cmd))(handle_percentage_command)
