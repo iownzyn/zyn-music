@@ -185,7 +185,6 @@ def PlayWrapper(command):
 
                 myu = await message.reply_text(_["call_4"].format(app.mention))
                 try:
-                    await asyncio.sleep(1)
                     await userbot.join_chat(invitelink)
                 except InviteHashExpired:
                     # Remove expired invite link from the cache.
@@ -214,7 +213,6 @@ def PlayWrapper(command):
                         return await message.reply_text(
                             _["call_3"].format(app.mention, type(e).__name__)
                         )
-                    await asyncio.sleep(3)
                     await myu.edit(_["call_5"].format(app.mention))
                 except UserAlreadyParticipant:
                     pass
