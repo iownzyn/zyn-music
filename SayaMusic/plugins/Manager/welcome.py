@@ -214,17 +214,24 @@ async def goodbye(client, update: ChatMemberUpdated):
         f"│ ᴡᴇ ʜᴏᴘᴇ ᴛᴏ sᴇᴇ ʏᴏᴜ ᴀɢᴀɪɴ!\n"
         f"╰────────────────"
     )
-    photo_id = None
+    photo_path = None
     try:
         if user.photo and hasattr(user.photo, "big_file_id"):
-            photo_id = user.photo.big_file_id
+            os.makedirs("downloads", exist_ok=True)
+            photo_path = await safe_send(
+                client.download_media,
+                user.photo.big_file_id,
+                file_name=f"downloads/goodbye_{user.id}.jpg",
+            )
     except Exception:
-        photo_id = None
+        photo_path = None
 
-    if photo_id:
+    if photo_path and os.path.exists(photo_path):
         sent = await safe_send(
-            client.send_photo, update.chat.id, photo_id, caption=caption
+            client.send_photo, update.chat.id, photo_path, caption=caption
         )
         if sent:
+            asyncio.create_task(cleanup(photo_path))
             return
+
     await safe_send(client.send_message, update.chat.id, caption)
