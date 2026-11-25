@@ -47,6 +47,7 @@ just add <b>c</b> at the beginning of the commands to use them for the channel.
 - /end or /stop : clears the queue and ends the current playing stream.
 - /player : get an interactive player panel.
 - /queue : shows the queued tracks list.
+- /groupmode on/off/status : let group admins choose whether members can use playback controls (Stop/End remain admin-only).
 """
 
 # -----------------------------------------------------------------------
@@ -148,11 +149,15 @@ Telegram emoji games - quick fun.
 
 # -----------------------------------------------------------------------
 HELP_11 = """
-<b><u>chatgpt :</u></b>
+<b><u>group playback control mode :</u></b>
 
-<b><u>Chat-with-AI features.</u></b>
+Group admins can choose who may control music in this group.
 
-<i>coming soon...</i>
+- /groupmode on : allow members to pause, resume, skip, loop, shuffle, seek, change volume and speed.
+- /groupmode off : restrict playback controls to actual group admins.
+- /groupmode status : show the current setting.
+
+<b>Safety rule:</b> /stop, /end and the player Stop button always remain restricted to actual group admins, even when group mode is ON.
 """
 
 # -----------------------------------------------------------------------
@@ -211,7 +216,7 @@ HELP_16 = """
 - /bots : displays the list of bots in the group.
 - /settitle : sets the title of the group.
 - /setdescription : sets the description of the group.
-- /wel : turn welcome messages on or off.
+- /welcome on/off : turn member welcome and automatic goodbye messages on or off.
 - /setphoto : sets the group photo.
 - /removephoto : removes the group photo.
 - /zombies : removes deleted accounts from the group.
