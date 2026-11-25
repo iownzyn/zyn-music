@@ -232,7 +232,7 @@ Random social mini-games.
 
 - /couple - Pick today's random pair.  
 - /love Alice Bob - % compatibility.  
-- /cute, /hot, /gay, /sexy, /horny ... - Self-rating fun.  
+- /cutie, /hot, /gay, /lesbian ... - Lighthearted percentage games.  
 - /kiss, /hug, /slap - Role-play replies.  
 - /sleep - Bot tells you good night.  
 - /wish Happy birthday! - Sweet wish card generator.  
