@@ -69,7 +69,7 @@ async def helper_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
 
     #── Action (1) gets its own sub-menu
     if number == 1:
-        await CallbackQuery.edit_message_text(
+        await CallbackQuery.edit_message_caption(
             _["S_B_M"],
             reply_markup=action_sub_menu(_, current_page),
             disable_web_page_preview=True
@@ -81,7 +81,7 @@ async def helper_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
     if not help_text:
         return await CallbackQuery.answer("Invalid help topic.", show_alert=True)
 
-    await CallbackQuery.edit_message_text(
+    await CallbackQuery.edit_message_caption(
         help_text,
         reply_markup=help_back_markup(_, current_page),
         disable_web_page_preview=True
@@ -93,7 +93,7 @@ async def helper_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
 @languageCB
 async def help_next_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
     if CallbackQuery.data == "help_next_2":
-        await CallbackQuery.edit_message_text(
+        await CallbackQuery.edit_message_caption(
             _["help_1"].format(SUPPORT_CHAT),
             reply_markup=second_page(_),
             disable_web_page_preview=True
@@ -105,7 +105,7 @@ async def help_next_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
 @languageCB
 async def help_prev_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
     if CallbackQuery.data == "help_prev_1":
-        await CallbackQuery.edit_message_text(
+        await CallbackQuery.edit_message_caption(
             _["help_1"].format(SUPPORT_CHAT),
             reply_markup=first_page(_),
             disable_web_page_preview=True
@@ -124,7 +124,7 @@ async def help_back_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
     else:
         return await CallbackQuery.answer("Invalid page.", show_alert=True)
 
-    await CallbackQuery.edit_message_text(
+    await CallbackQuery.edit_message_caption(
         _["help_1"].format(SUPPORT_CHAT),
         reply_markup=keyboard,
         disable_web_page_preview=True
@@ -135,7 +135,7 @@ async def help_back_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
 @app.on_callback_query(filters.regex("action_prom_1") & ~BANNED_USERS)
 @languageCB
 async def action_prom_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
-    await CallbackQuery.edit_message_text(
+    await CallbackQuery.edit_message_caption(
         helpers.HELP_1_PROMO,
         reply_markup=help_back_markup(_, 1),
         disable_web_page_preview=True
@@ -144,7 +144,7 @@ async def action_prom_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
 @app.on_callback_query(filters.regex("action_pun_1") & ~BANNED_USERS)
 @languageCB
 async def action_pun_cb(client: Client, CallbackQuery: types.CallbackQuery, _):
-    await CallbackQuery.edit_message_text(
+    await CallbackQuery.edit_message_caption(
         helpers.HELP_1_PUNISH,
         reply_markup=help_back_markup(_, 1),
         disable_web_page_preview=True
