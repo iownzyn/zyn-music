@@ -107,6 +107,13 @@ class Call:
         await assistant.resume(chat_id)
 
     @capture_internal_err
+    async def set_volume(self, chat_id: int, volume: int) -> None:
+        if not isinstance(volume, int) or not 50 <= volume <= 200:
+            raise AssistantErr("Volume must be between 50 and 200.")
+        assistant = await group_assistant(self, chat_id)
+        await assistant.change_volume_call(chat_id, volume)
+
+    @capture_internal_err
     async def mute_stream(self, chat_id: int) -> None:
         assistant = await group_assistant(self, chat_id)
         await assistant.mute(chat_id)
