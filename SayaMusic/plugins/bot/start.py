@@ -72,6 +72,37 @@ async def get_welcome_video():
     return saved_video or random.choice(START_VIDS)
 
 
+async def send_welcome_video(message: Message, video, caption: str, reply_markup):
+    try:
+        return await message.reply_video(
+            video,
+            caption=caption,
+            has_spoiler=True,
+            reply_markup=reply_markup,
+        )
+    except Exception as video_error:
+        print(f"Start welcome video failed: {type(video_error).__name__}")
+
+    # If a saved Telegram file_id becomes unavailable, try the configured
+    # HTTPS fallback before degrading to a text-only /start response.
+    if video not in START_VIDS and START_VIDS:
+        try:
+            return await message.reply_video(
+                random.choice(START_VIDS),
+                caption=caption,
+                has_spoiler=True,
+                reply_markup=reply_markup,
+            )
+        except Exception as fallback_error:
+            print(f"Fallback start video failed: {type(fallback_error).__name__}")
+
+    return await message.reply_text(
+        caption,
+        reply_markup=reply_markup,
+        disable_web_page_preview=True,
+    )
+
+
 async def reset_start_video_command(client, message: Message):
     if not message.from_user or message.from_user.id != config.OWNER_ID:
         return await message.reply_text("Only the configured bot owner can reset the welcome video.")
@@ -194,21 +225,9 @@ async def start_pm(client, message: Message, _):
     )
     start_caption += f"\n\n✦ ᴍᴏɴᴛʜʟʏ ᴀᴄᴛɪᴠᴇ ᴜsᴇʀs : {monthly_active:,}"
 
-    try:
-        await message.reply_video(
-            welcome_video,
-            caption=start_caption,
-            has_spoiler=True,
-            reply_markup=InlineKeyboardMarkup(out),
-        )
-    except Exception as video_error:
-        # Keep /start usable if the configured welcome video host is unavailable.
-        print(f"Start welcome video failed: {type(video_error).__name__}")
-        await message.reply_text(
-            start_caption,
-            reply_markup=InlineKeyboardMarkup(out),
-            disable_web_page_preview=True,
-        )
+    await send_welcome_video(
+        message, welcome_video, start_caption, InlineKeyboardMarkup(out)
+    )
 
     if await is_on_off(2):
         username = f"@{message.from_user.username}" if message.from_user.username else "(none)"
@@ -229,20 +248,9 @@ async def start_gp(client, message: Message, _):
     welcome_video = await get_start_video_id() or random.choice(START_VIDS)
     uptime = int(time.time() - _boot_)
     group_start_caption = _["start_1"].format(app.mention, get_readable_time(uptime))
-    try:
-        await message.reply_video(
-            welcome_video,
-            caption=group_start_caption,
-            has_spoiler=True,
-            reply_markup=InlineKeyboardMarkup(out),
-        )
-    except Exception as video_error:
-        print(f"Group start welcome video failed: {type(video_error).__name__}")
-        await message.reply_text(
-            group_start_caption,
-            reply_markup=InlineKeyboardMarkup(out),
-            disable_web_page_preview=True,
-        )
+    await send_welcome_video(
+        message, welcome_video, group_start_caption, InlineKeyboardMarkup(out)
+    )
     return await add_served_chat(message.chat.id)
 
 
@@ -277,16 +285,16 @@ async def welcome(client, message: Message):
 
                 out = start_panel(_)
                 welcome_video = await get_start_video_id() or random.choice(START_VIDS)
-                await message.reply_video(
+                await send_welcome_video(
+                    message,
                     welcome_video,
-                    caption=_["start_3"].format(
+                    _["start_3"].format(
                         message.from_user.mention,
                         app.mention,
                         message.chat.title,
                         app.mention,
                     ),
-                    has_spoiler=True,
-                    reply_markup=InlineKeyboardMarkup(out),
+                    InlineKeyboardMarkup(out),
                 )
                 await add_served_chat(message.chat.id)
                 await message.stop_propagation()
