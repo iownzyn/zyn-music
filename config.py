@@ -82,8 +82,13 @@ STRING4 = getenv("STRING_SESSION4")
 STRING5 = getenv("STRING_SESSION5")
 
 # ── Media assets ───────────────────────────────────────────────────────────────
+# Set START_VIDEO_URL (or comma-separated START_VIDS) in Render once the
+# final Zayn × Alfiya welcome video asset is uploaded to a stable HTTPS host.
+_default_start_video = "https://litter.catbox.moe/ge4ds72i538f45q2.mp4"
 START_VIDS = [
-    "https://litter.catbox.moe/ge4ds72i538f45q2.mp4",
+    url.strip()
+    for url in getenv("START_VIDS", getenv("START_VIDEO_URL", _default_start_video)).split(",")
+    if url.strip()
 ]
 STICKERS = [
     "CAACAgUAAxkBAAEDt9Np-fu9lBKL7octL4Pd5XkcyCj-qQACzhsAAuwSIFQNutRA9ZkJSjsE",
