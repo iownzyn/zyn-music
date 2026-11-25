@@ -55,19 +55,35 @@ def get_cookie_file() -> Optional[str]:
     return None
 
 
-def find_cached_file(video_id: str) -> Optional[str]:
+def media_download_dir(media_type: str) -> str:
+    """Keep audio and video caches separate so /play cannot feed audio to /vplay."""
+    folder = "video" if media_type == "video" else "audio"
+    path = os.path.join(DOWNLOAD_DIR, folder)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def find_cached_file(video_id: str, media_type: str) -> Optional[str]:
     if not video_id:
         return None
-    for ext in ("mp3", "m4a", "webm", "mp4", "mkv"):
-        path = f"{DOWNLOAD_DIR}/{video_id}.{ext}"
-        if os.path.exists(path):
-            return path
+    extensions = (
+        ("mp4", "mkv") if media_type == "video"
+        else ("mp3", "m4a", "webm", "opus")
+    )
+    # Prefer the new media-specific cache; also accept safe legacy extensions.
+    directories = (media_download_dir(media_type), DOWNLOAD_DIR)
+    for directory in directories:
+        for ext in extensions:
+            path = os.path.join(directory, f"{video_id}.{ext}")
+            if os.path.exists(path) and os.path.getsize(path) > 0:
+                return path
     return None
 
 
-def get_ytdlp_base_opts() -> Dict[str, object]:
+def get_ytdlp_base_opts(output_dir: str = DOWNLOAD_DIR) -> Dict[str, object]:
+    os.makedirs(output_dir, exist_ok=True)
     opts = {
-        "outtmpl": f"{DOWNLOAD_DIR}/%(id)s.%(ext)s",
+        "outtmpl": f"{output_dir}/%(id)s.%(ext)s",
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
@@ -149,7 +165,8 @@ async def api_download_audio(link: str) -> Optional[str]:
                     return None
                 dl_url = data.get("link")
                 fmt = data.get("format", "webm")
-                out_path = f"{DOWNLOAD_DIR}/{vid}.{fmt}"
+                safe_fmt = re.sub(r"[^a-zA-Z0-9]", "", str(fmt)) or "webm"
+                out_path = os.path.join(media_download_dir("audio"), f"{vid}.{safe_fmt}")
                 return await download_file(dl_url, out_path)
     except Exception:
         return None
@@ -177,30 +194,31 @@ async def api_download_video(link: str) -> Optional[str]:
                     return None
                 dl_url = data.get("link")
                 fmt = data.get("format", "mp4")
-                out_path = f"{DOWNLOAD_DIR}/{vid}.{fmt}"
+                safe_fmt = re.sub(r"[^a-zA-Z0-9]", "", str(fmt)) or "mp4"
+                out_path = os.path.join(media_download_dir("video"), f"{vid}.{safe_fmt}")
                 return await download_file(dl_url, out_path)
     except Exception:
         return None
 
 
-def get_final_path_from_info(info: Dict) -> Optional[str]:
+def get_final_path_from_info(info: Dict, output_dir: str = DOWNLOAD_DIR) -> Optional[str]:
     vid = info.get("id")
     if not vid:
         return None
     ext = info.get("ext")
     if ext:
-        p = f"{DOWNLOAD_DIR}/{vid}.{ext}"
+        p = os.path.join(output_dir, f"{vid}.{ext}")
         if os.path.exists(p):
             return p
     matches = sorted(
-        glob.glob(f"{DOWNLOAD_DIR}/{vid}.*"),
+        glob.glob(os.path.join(output_dir, f"{vid}.*")),
         key=os.path.getmtime,
         reverse=True,
     )
     return matches[0] if matches else None
 
 
-def download_with_ytdlp_sync(link: str, fmt: str) -> Optional[str]:
+def download_with_ytdlp_sync(link: str, fmt: str, media_type: str) -> Optional[str]:
     """Download with a preferred format, then retry using a compatible fallback."""
     formats = [fmt]
     if fmt.startswith("bestaudio"):
@@ -217,7 +235,8 @@ def download_with_ytdlp_sync(link: str, fmt: str) -> Optional[str]:
         ]
         for client_opts in client_attempts:
             try:
-                opts = get_ytdlp_base_opts()
+                output_dir = media_download_dir(media_type)
+                opts = get_ytdlp_base_opts(output_dir)
                 opts.update(client_opts)
                 opts["format"] = selected_format
                 # Let yt-dlp raise extraction/download errors so the fallback is attempted.
@@ -226,7 +245,7 @@ def download_with_ytdlp_sync(link: str, fmt: str) -> Optional[str]:
                     info = ydl.extract_info(link, download=True)
                     if not info:
                         continue
-                    if path := get_final_path_from_info(info):
+                    if path := get_final_path_from_info(info, output_dir):
                         return path
             except Exception as exc:
                 last_error = exc
@@ -248,55 +267,71 @@ async def run_with_semaphore(coro):
 
 
 async def deduplicate_download(key: str, runner):
+    # Do not hold the lock while waiting for another task's download.
     async with _inflight_lock:
-        if fut := _inflight.get(key):
-            return await fut
-        fut = asyncio.get_running_loop().create_future()
-        _inflight[key] = fut
+        fut = _inflight.get(key)
+        owner = fut is None
+        if owner:
+            fut = asyncio.get_running_loop().create_future()
+            _inflight[key] = fut
+
+    if not owner:
+        return await asyncio.shield(fut)
+
     try:
         result = await runner()
-        fut.set_result(result)
+        if not fut.done():
+            fut.set_result(result)
         return result
-    except Exception as e:
-        fut.set_exception(e)
+    except asyncio.CancelledError:
+        if not fut.done():
+            fut.set_result(None)
+        raise
+    except Exception as exc:
+        LOGGER.warning("Download failed for %s: %s", key, type(exc).__name__)
+        if not fut.done():
+            fut.set_result(None)
         return None
     finally:
         async with _inflight_lock:
-            _inflight.pop(key, None)
+            if _inflight.get(key) is fut:
+                _inflight.pop(key, None)
 
 
 async def race_ytdlp_and_api(yt_task, api_task, title: str):
-    done, pending = await asyncio.wait(
-        {yt_task, api_task}, return_when=asyncio.FIRST_COMPLETED
-    )
-    for task in done:
-        result = task.result()
-        if result and os.path.exists(result):
-            source = "yt-dlp" if task is yt_task else "API"
-            log_download_source(title, source)
-            for p in pending:
-                p.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await p
-            return result
-    for task in pending:
-        try:
-            result = await task
+    pending = {yt_task, api_task}
+    while pending:
+        done, pending = await asyncio.wait(
+            pending, return_when=asyncio.FIRST_COMPLETED
+        )
+        for task in done:
+            try:
+                result = task.result()
+            except asyncio.CancelledError:
+                continue
+            except Exception as exc:
+                LOGGER.warning(
+                    "Download provider failed for '%s': %s",
+                    title,
+                    type(exc).__name__,
+                )
+                continue
+
             if result and os.path.exists(result):
                 source = "yt-dlp" if task is yt_task else "API"
                 log_download_source(title, source)
+                for other in pending:
+                    other.cancel()
+                if pending:
+                    await asyncio.gather(*pending, return_exceptions=True)
                 return result
-        except asyncio.CancelledError:
-            pass
-        except Exception:
-            pass
     return None
 
 
 async def yt_dlp_download(link: str, type: str, title: str = "") -> Optional[str]:
     loop = asyncio.get_running_loop()
     vid = extract_video_id(link)
-    if cached := find_cached_file(vid):
+    if cached := find_cached_file(vid, type):
         if title:
             LOGGER.info(f"Track '{title}' - Served from cache")
         return cached
@@ -307,7 +342,7 @@ async def yt_dlp_download(link: str, type: str, title: str = "") -> Optional[str
         async def run():
             ytdlp_task = asyncio.create_task(
                 run_with_semaphore(
-                    loop.run_in_executor(None, download_with_ytdlp_sync, link, "bestaudio[ext=webm][acodec=opus]")
+                    loop.run_in_executor(None, download_with_ytdlp_sync, link, "bestaudio[ext=webm][acodec=opus]", "audio")
                 )
             )
             api_task = asyncio.create_task(api_download_audio(link)) if USE_AUDIO_API else None
@@ -326,7 +361,7 @@ async def yt_dlp_download(link: str, type: str, title: str = "") -> Optional[str
         async def run():
             ytdlp_task = asyncio.create_task(
                 run_with_semaphore(
-                    loop.run_in_executor(None, download_with_ytdlp_sync, link, "(bestvideo[height<=?720][width<=?1280][ext=mp4])+(bestaudio)")
+                    loop.run_in_executor(None, download_with_ytdlp_sync, link, "(bestvideo[height<=?720][width<=?1280][ext=mp4])+(bestaudio)", "video")
                 )
             )
             api_task = asyncio.create_task(api_download_video(link)) if USE_VIDEO_API else None
