@@ -1,5 +1,6 @@
 # Saya Music
 import random
+from datetime import datetime, timezone
 from typing import Dict, List, Union
 
 from SayaMusic import userbot
@@ -469,10 +470,19 @@ async def get_served_users() -> list:
 
 
 async def add_served_user(user_id: int):
-    is_served = await is_served_user(user_id)
-    if is_served:
-        return
-    return await usersdb.insert_one({"user_id": user_id})
+    # Keep a last-seen timestamp for monthly active-user statistics.
+    now = datetime.now(timezone.utc)
+    await usersdb.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_seen": now}, "$setOnInsert": {"user_id": user_id}},
+        upsert=True,
+    )
+
+
+async def get_monthly_active_users() -> int:
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return await usersdb.count_documents({"last_seen": {"$gte": month_start}})
 
 
 async def get_served_chats() -> list:
