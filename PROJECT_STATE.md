@@ -113,3 +113,13 @@ Do NOT declare deploy-ready or deploy a final release yet.
   - Video download uses yt-dlp with MP4 best-video up to 720p plus best audio, merged to MP4; API video fallback is also available when configured.
 - CI for `b9cb2763` completed successfully: https://github.com/iownzyn/zyn-music/actions/runs/45703615244
 - This is source/CI verification only. Real Telegram voice-chat video playback, API credentials/provider availability, and Render runtime have not been tested from this session. Do not mark /vplay runtime-tested or deploy-ready until those checks pass.
+
+## 2026-11-26 — normal /play artwork and repeat-cache hardening
+- `42c8a1e8`: playback artwork cache version bumped to v6; the card uses a clean, muted ivory/rose ZAYN × ALFIYA pill instead of the previous more prominent lettering.
+- `e17b25e3`: normal `/play` search-result selection cards now call the existing per-track `get_thumb(video_id)` renderer instead of showing the raw YouTube thumbnail. Each song keeps its own source thumbnail and track title/duration.
+- `262a049b`: artwork fallback no longer relies on an optional config logger attribute.
+- `1ea5ebed`: added a small muted couple-avatar mark to the Zayn × Alfiya label; no neon/glow styling.
+- `9536807a`: yt-dlp final-path resolver now ignores .part/.ytdl/.temp and zero-byte files so partial downloads cannot be returned as playable cache entries.
+- CI passed for `1ea5ebed`; CI for `9536807a` was queued at the time this note was added.
+- The user reiterated the visual direction: /vplay remains an HD video stream; normal /play gets the Zayn × Alfiya brand treatment with a clean Pinterest/anime-couple feel, no neon. Current implementation preserves unique per-track source thumbnails and adds the muted couple mark/brand label. A bespoke generated anime couple image has been created as a visual reference but has NOT yet been committed as a repo asset or wired into the playback card.
+- Do not claim a live Telegram voice-chat test or Render deployment. Those still require runtime access.
