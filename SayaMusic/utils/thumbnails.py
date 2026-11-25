@@ -7,7 +7,6 @@ import time
 import aiofiles
 import aiohttp
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
-from youtubesearchpython.aio import VideosSearch
 from config import YOUTUBE_IMG_URL
 from SayaMusic.core.dir import CACHE_DIR
 
@@ -115,19 +114,10 @@ def _draw_original_couple_scene() -> Image.Image:
 
 async def get_thumb(videoid: str) -> str:
     """Return a fresh Zayn × Alfiya couple artwork for each normal /play request."""
-    try:
-        results = VideosSearch(f"https://www.youtube.com/watch?v={videoid}", limit=1)
-        results_data = await results.next()
-        result_items = results_data.get("result", [])
-        data = result_items[0] if result_items else {}
-        title = re.sub(r"\W+", " ", data.get("title", "Now Playing")).title()
-        duration = data.get("duration")
-        views = data.get("viewCount", {}).get("short", "Music")
-    except Exception:
-        title, duration, views = "Now Playing", None, "ZYN MUSIC"
-
-    is_live = not duration or str(duration).strip().lower() in {"", "live", "live now"}
-    duration_text = "Live" if is_live else duration or "Unknown"
+    # Artwork must never wait on a second YouTube metadata request.
+    # The track title is already shown in the Telegram caption/player panel.
+    title, duration, views = "Now Playing", None, "ZYN MUSIC"
+    duration_text = "Music"
 
     bg = _draw_original_couple_scene().convert("RGBA")
     draw = ImageDraw.Draw(bg)
