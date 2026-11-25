@@ -9,6 +9,7 @@ from SayaMusic.misc import db
 from SayaMusic.utils.database import get_loop
 from SayaMusic.utils.decorators import AdminRightsCheck
 from SayaMusic.utils.inline import close_markup, stream_markup
+from SayaMusic.utils.group_admin import is_real_group_admin
 from SayaMusic.utils.stream.autoclear import auto_clean
 from SayaMusic.utils.thumbnails import get_thumb
 from config import BANNED_USERS
@@ -19,6 +20,8 @@ from config import BANNED_USERS
 )
 @AdminRightsCheck
 async def skip(cli, message: Message, _, chat_id):
+    if not await is_real_group_admin(cli, chat_id, message.from_user.id):
+        return await message.reply_text("Only admins of this group can control playback.")
     if not len(message.command) < 2:
         loop = await get_loop(chat_id)
         if loop != 0:
