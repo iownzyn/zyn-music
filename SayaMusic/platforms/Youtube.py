@@ -419,7 +419,10 @@ class YouTubeAPI:
 
             if await is_on_off(1):
                 p = await yt_dlp_download(link, type="video", title=await self.title(link))
-                return (p, True) if p else (None, None)
+                if p:
+                    return p, True
+                # A failed file download should not end the attempt: try a
+                # progressive direct stream URL as a lighter fallback.
 
             stdout, stderr = await _exec_proc(
                 "yt-dlp",
@@ -432,7 +435,7 @@ class YouTubeAPI:
                 "2",
                 "-g",
                 "-f",
-                "best[height<=?720][width<=?1280]/best[height<=720]/best",
+                "best[height<=720][width<=1280][vcodec!=none][acodec!=none]/best[height<=480][vcodec!=none][acodec!=none]/best",
                 link,
             )
             stream_url = stdout.decode("utf-8", errors="ignore").strip().splitlines()
