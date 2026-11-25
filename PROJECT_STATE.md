@@ -155,3 +155,11 @@ Do NOT declare deploy-ready or deploy a final release yet.
 
 - Welcome video activation asset confirmed available in the current workspace: `/mnt/data/Zayn_Alfiya_Premium_Welcome.mp4` (22.36 seconds, 960×720, ~7.3 MB). This is the approved edited couple video from the 25 Nov session. It is not committed as a binary repo file and has not yet been uploaded to Telegram; activate it by sending the MP4 to `@ZynMusicBot` and replying to it with `/setstartvideo`. Verify with `/start`; owner can revert using `/resetstartvideo`.
 - The Render `/health` and `/ready` endpoints could not be independently reached from the current web inspection session. The keep-alive workflow is configured to ping `/health` every five minutes, but current production health/readiness is unverified.
+
+
+## 2026-11-26 continuation — player controls follow-up
+- `2ea7f2a2`: removed the extra generic `close` callback from the main player markup. The player panel now exposes only the `stream_admin Close` action, which is checked against actual group-admin status before deleting the player message.
+- `1b58973f`: corrected the denial-message condition so unauthorized attempts to use Close receive the explicit admin-only message.
+- Existing Volume and Speed buttons route into the already-registered `ZynVolume` and `SpeedUP` menu callbacks. Those callbacks independently validate the group and `/groupmode` permissions before changing playback.
+- CI for `1b58973f` passed: https://github.com/iownzyn/zyn-music/actions/runs/45709659396
+- This closes a UI/authorization gap in the player panel, but does not verify live Telegram playback. `/vplay`, assistant voice-chat join latency and the actual welcome video still need production runtime verification. The approved welcome MP4 remains local to the ChatGPT session; it must be sent to the bot and saved with `/setstartvideo` before `/start` can play that exact video.
