@@ -41,13 +41,20 @@ async def set_start_video_command(client, message: Message):
 
     replied = message.reply_to_message
     video = getattr(replied, "video", None) if replied else None
-    if not video:
+    document = getattr(replied, "document", None) if replied else None
+    file_id = video.file_id if video else (
+        document.file_id
+        if document and (document.mime_type or "").startswith("video/")
+        else None
+    )
+    if not file_id:
         return await message.reply_text(
-            "Reply to the uploaded MP4 video with /setstartvideo to save it as the bot welcome video."
+            "Reply to the uploaded MP4 video (send it as a video, not a compressed file if possible) "
+            "with /setstartvideo to save it as the bot welcome video."
         )
 
     try:
-        await set_start_video_id(video.file_id)
+        await set_start_video_id(file_id)
     except Exception as exc:
         print(f"Could not save start video setting: {type(exc).__name__}")
         return await message.reply_text("Couldn't save the welcome video. Check the database connection.")
@@ -56,6 +63,15 @@ async def set_start_video_command(client, message: Message):
 
 
 @app.on_message(filters.command(["resetstartvideo"]) & filters.private)
+async def get_welcome_video():
+    try:
+        saved_video = await get_start_video_id()
+    except Exception as exc:
+        print(f"Could not read custom start video setting: {type(exc).__name__}")
+        saved_video = None
+    return saved_video or random.choice(START_VIDS)
+
+
 async def reset_start_video_command(client, message: Message):
     if not message.from_user or message.from_user.id != config.OWNER_ID:
         return await message.reply_text("Only the configured bot owner can reset the welcome video.")
@@ -161,7 +177,7 @@ async def start_pm(client, message: Message, _):
             return
 
     out = private_panel(_)
-    welcome_video = await get_start_video_id() or random.choice(START_VIDS)
+    welcome_video = await get_welcome_video()
     sticker_message = await message.reply_sticker(sticker=random.choice(STICKERS))
     asyncio.create_task(delete_sticker_after_delay(sticker_message, 2))
 
