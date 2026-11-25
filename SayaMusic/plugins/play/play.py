@@ -31,15 +31,23 @@ from SayaMusic.utils.stream.stream import stream
 
 def _safe_play_status_text(_, channel=None):
     if channel:
-        text = _["play_2"].format(channel)
-        if isinstance(text, str) and text.strip():
-            return text
+        return (
+            "╭──────「 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 」\n"
+            f"│ ✦ ᴄʜᴀɴɴᴇʟ : {channel}\n"
+            "│\n"
+            "│ ⏳ ᴛʀᴀᴄᴋ ᴘʀᴏᴄᴇssɪɴɢ...\n"
+            "│ ♫ ᴘʟᴇᴀsᴇ ᴡᴀɪᴛ\n"
+            "╰────────────────"
+        )
 
-    non_empty_ayu = [txt for txt in AYU if isinstance(txt, str) and txt.strip()]
-    if non_empty_ayu:
-        return random.choice(non_empty_ayu)
-
-    return "Processing your request..."
+    return (
+        "╭──────「 𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 」\n"
+        "│ ✦ ʀᴇǫᴜᴇsᴛ ʀᴇᴄᴇɪᴠᴇᴅ\n"
+        "│\n"
+        "│ ⏳ ᴛʀᴀᴄᴋ ᴘʀᴏᴄᴇssɪɴɢ...\n"
+        "│ ♫ ᴘʟᴇᴀsᴇ ᴡᴀɪᴛ\n"
+        "╰────────────────"
+    )
 
 
 @app.on_message(
