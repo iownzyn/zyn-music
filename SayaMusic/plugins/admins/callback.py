@@ -28,6 +28,7 @@ from SayaMusic.utils.database import (
     set_loop,
 )
 from SayaMusic.utils.decorators import ActualAdminCB, languageCB
+from SayaMusic.utils.group_admin import can_control_playback, is_real_group_admin
 from SayaMusic.utils.formatters import seconds_to_min
 from SayaMusic.utils.inline import close_markup, stream_markup, stream_markup_timer
 from SayaMusic.utils.stream.autoclear import auto_clean
@@ -89,25 +90,21 @@ async def manage_callback(client, callback: CallbackQuery, _):
             show_alert=True,
         )
 
-    try:
-        member = await app.get_chat_member(chat_id, callback.from_user.id)
-    except Exception:
-        return await callback.answer(
-            "Unable to verify your group-admin permissions.",
-            show_alert=True,
-        )
-
-    if member.status not in (
-        ChatMemberStatus.ADMINISTRATOR,
-        ChatMemberStatus.OWNER,
-    ):
-        return await callback.answer(
-            "Only admins of this group can control playback.",
-            show_alert=True,
-        )
-
     if command not in {"Pause", "Resume", "Stop", "End", "Loop", "Shuffle", "Skip", "Replay", "1", "2", "3", "4"}:
         return await callback.answer("Unsupported playback control.", show_alert=True)
+
+    # Stop/End is always restricted to real group admins, even when group mode
+    # is enabled. Other player controls may be shared by the group admin.
+    allowed = (
+        await is_real_group_admin(app, chat_id, callback.from_user.id)
+        if command in {"Stop", "End"}
+        else await can_control_playback(app, chat_id, callback.from_user.id, command)
+    )
+    if not allowed:
+        return await callback.answer(
+            "Only group admins can Stop/End. Other controls require group mode ON.",
+            show_alert=True,
+        )
 
     if not await is_active_chat(chat_id):
         return await callback.answer(_["general_5"], show_alert=True)
