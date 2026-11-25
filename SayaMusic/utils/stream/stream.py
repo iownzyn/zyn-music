@@ -152,32 +152,39 @@ async def stream(
         duration_min = result["duration_min"]
         thumbnail = result["thumb"]
 
+        file_path, direct = None, None
         try:
             file_path, direct = await YouTube.download(
                 vidid, mystic, video=is_video, videoid=vidid
             )
-        except Exception:
-            # YouTube may block datacenter IPs with an anti-bot challenge.
-            # Fall back to a matching public SoundCloud track for audio playback.
-            if not is_video:
-                fallback = await SoundCloud.search_and_download(title)
-                if fallback:
-                    fallback_details, fallback_path = fallback
-                    return await stream(
-                        _,
-                        mystic,
-                        user_id,
-                        fallback_details,
-                        chat_id,
-                        user_name,
-                        original_chat_id,
-                        video=False,
-                        streamtype="soundcloud",
-                        forceplay=forceplay,
-                    )
-            raise AssistantErr(_["play_14"])
+        except Exception as exc:
+            # YouTube can reject cloud-server extraction. Audio requests may
+            # fall back to a separately indexed public SoundCloud result.
+            from SayaMusic.logging import LOGGER
+            LOGGER.warning("YouTube playback failed; trying audio fallback: %s", type(exc).__name__)
+
+        if not file_path and not is_video:
+            fallback = await SoundCloud.search_and_download(title)
+            if fallback:
+                fallback_details, _fallback_path = fallback
+                return await stream(
+                    _,
+                    mystic,
+                    user_id,
+                    fallback_details,
+                    chat_id,
+                    user_name,
+                    original_chat_id,
+                    video=False,
+                    streamtype="soundcloud",
+                    forceplay=forceplay,
+                )
+
         if not file_path:
-            raise AssistantErr(_["play_14"])
+            raise AssistantErr(
+                "YouTube ne is request ko verify nahi kiya. Audio ke liye alternate source bhi available nahi mila. "
+                "Kisi aur track ya Telegram audio ko try karein."
+            )
 
         if await is_active_chat(chat_id):
             await put_queue(
