@@ -1,4 +1,5 @@
 # ZYN MUSIC
+import asyncio
 from os import getenv
 
 from pyrogram import Client
@@ -97,12 +98,18 @@ class Userbot:
             LOGGER(__name__).error(f"Failed to start Assistant {index}: {e}")
 
     async def start(self):
-        LOGGER(__name__).info("Starting ZYN MUSIC assistants...")
-        await self.start_assistant(self.one, 1)
-        await self.start_assistant(self.two, 2)
-        await self.start_assistant(self.three, 3)
-        await self.start_assistant(self.four, 4)
-        await self.start_assistant(self.five, 5)
+        LOGGER(__name__).info("Starting ZYN MUSIC assistants in parallel...")
+        clients = (
+            (self.one, 1),
+            (self.two, 2),
+            (self.three, 3),
+            (self.four, 4),
+            (self.five, 5),
+        )
+        await asyncio.gather(
+            *(self.start_assistant(client, index) for client, index in clients if client),
+            return_exceptions=True,
+        )
 
     async def stop(self):
         LOGGER(__name__).info("Stopping Assistants...")
