@@ -123,3 +123,9 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - CI passed for `1ea5ebed`; CI for `9536807a` was queued at the time this note was added.
 - The user reiterated the visual direction: /vplay remains an HD video stream; normal /play gets the Zayn × Alfiya brand treatment with a clean Pinterest/anime-couple feel, no neon. Current implementation preserves unique per-track source thumbnails and adds the muted couple mark/brand label. A bespoke generated anime couple image has been created as a visual reference but has NOT yet been committed as a repo asset or wired into the playback card.
 - Do not claim a live Telegram voice-chat test or Render deployment. Those still require runtime access.
+
+- Latest CI for `fbb0aae9` completed successfully: https://github.com/iownzyn/zyn-music/actions/runs/45704676397
+- `speed.py` source audit: speed command checks actual group-admin status; callback checks that the button belongs to the same group, validates allowed speeds, checks active playback, then verifies actual admin/owner membership before changing speed.
+- `volume.py` source audit: volume command and callback both verify actual group-admin status; volume range is 50, 75, 100, 125, 150, 175, 200 percent; callback is tied to the originating group.
+- Main playback controls source audit: callback verifies original group and actual admin/owner status before Pause/Resume/Stop/End/Loop/Shuffle/Skip/Replay/seek.
+- These are code-level audits only. Actual Telegram group permission behavior and stream volume/speed still need runtime tests.
