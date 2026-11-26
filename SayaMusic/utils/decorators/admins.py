@@ -75,6 +75,7 @@ def AdminRightsCheck(mystic):
         shared_control_commands = {
             "pause", "resume", "skip", "next", "loop", "shuffle",
             "seek", "seekback", "volume", "vol", "speed", "slow", "playback",
+            "forward", "back", "forward10", "back10", "rewind10", "backward10",
         }
         group_mode_allows_member = False
         if command_name in shared_control_commands:
