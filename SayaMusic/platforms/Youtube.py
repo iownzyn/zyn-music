@@ -418,7 +418,7 @@ class YouTubeAPI:
                 return None, None
 
             if await is_on_off(1):
-                p = await yt_dlp_download(link, type="video", title=await self.title(link))
+                p = await yt_dlp_download(link, type="video", title="")
                 if p:
                     return p, True
                 # A failed file download should not end the attempt: try a
