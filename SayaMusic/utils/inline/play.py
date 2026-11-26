@@ -55,6 +55,10 @@ def control_buttons(_, chat_id):
             InlineKeyboardButton(text="⏭ Skip", callback_data=f"stream_admin Skip|{chat_id}"),
         ],
         [
+            InlineKeyboardButton(text="⏪ 10s", callback_data=f"stream_admin Back|{chat_id}"),
+            InlineKeyboardButton(text="10s ⏩", callback_data=f"stream_admin Forward|{chat_id}"),
+        ],
+        [
             InlineKeyboardButton(text="🔊 Volume", callback_data=f"stream_admin Volume|{chat_id}"),
             InlineKeyboardButton(text="⚡ Speed", callback_data=f"stream_admin Speed|{chat_id}"),
             InlineKeyboardButton(text="↻ Replay", callback_data=f"stream_admin Replay|{chat_id}"),
