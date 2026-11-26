@@ -344,7 +344,7 @@ async def stream(
                 "video" if is_video else "audio",
                 forceplay=forceplay,
             )
-            img = await get_thumb(vidid)
+            img = thumbnail or await get_thumb(vidid, title=title)
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 original_chat_id,
