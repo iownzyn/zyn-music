@@ -13,7 +13,7 @@ import config
 
 class SpotifyAPI:
     def __init__(self):
-        self.regex = r"^https?://open\\.spotify\\.com/.+"
+        self.regex = r"^https?://open\.spotify\.com/.+"
         self.client_id = config.SPOTIFY_CLIENT_ID
         self.client_secret = config.SPOTIFY_CLIENT_SECRET
         self._track_cache = {}
