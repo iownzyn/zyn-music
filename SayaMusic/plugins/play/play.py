@@ -441,18 +441,34 @@ async def play_command(
         if "-v" in query:
             query = query.replace("-v", "")
 
+        spotify_meta = await Spotify.search(query)
+        search_query = (
+            f"{spotify_meta['title']} {spotify_meta['artist']}".strip()
+            if spotify_meta else query
+        )
         try:
-            details, track_id = await YouTube.track(query)
-            internal_type = "youtube"
-            log_label = "Youtube Track"
+            details, track_id = await YouTube.track(search_query)
+            if spotify_meta:
+                # Keep YouTube's ID/link for lookup and the existing playback flow,
+                # but display Spotify's canonical title and album artwork.
+                details["title"] = (
+                    f"{spotify_meta['title']} - {spotify_meta['artist']}"
+                    if spotify_meta["artist"] else spotify_meta["title"]
+                )
+                details["thumb"] = spotify_meta["thumb"] or details.get("thumb", "")
+                details["spotify_url"] = spotify_meta["spotify_url"]
+                internal_type = "youtube"
+                log_label = "Spotify metadata + authorized audio lookup"
+            else:
+                internal_type = "youtube"
+                log_label = "Youtube Track"
         except Exception:
-            # YouTube may challenge datacenter requests; try SoundCloud for text searches.
-            fallback = await SoundCloud.search_and_download(query)
+            # If metadata search fails, keep the existing SoundCloud fallback.
+            fallback = await SoundCloud.search_and_download(search_query)
             if not fallback:
                 return await mystic.edit_text(
                     f"{_['play_3']}\\n"
-                    "YouTube is temporarily restricting this request and "
-                    "SoundCloud did not return a playable match. Try another query."
+                    "No metadata/playable match was found. Try another query."
                 )
             details, _fallback_path = fallback
             try:
