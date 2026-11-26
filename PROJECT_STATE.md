@@ -182,3 +182,13 @@ Do NOT declare deploy-ready or deploy a final release yet.
 - These are source/CI improvements. They do not prove a live YouTube URL, assistant session, group permissions, or Render runtime is healthy.
 - Welcome video: `/setstartvideo` already saves a Telegram video file_id in MongoDB when the owner replies to an uploaded MP4 with the command. The local MP4 assets in the ChatGPT workspace are not automatically uploaded to Telegram or saved in the bot database. Owner-side Telegram action is still required.
 
+## 2026-11-26 continuation — Telegram slash menu, Spotify responsiveness, 10-second seek
+- `3c991b9e`: added `SayaMusic/utils/bot_commands.py`, which discovers literal `filters.command(...)` names from the same plugin directory depth used by the loader and publishes Telegram `BotCommand` entries to all group chats and all private chats.
+- `72da0422`: startup now registers the slash-command menu after plugins load, so commands are discovered from the active plugin source rather than relying on the old /help panel.
+- `454af3e5`: added fixed 10-second `/forward`, `/forward10`, `/back`, `/back10`, `/rewind10`, and `/backward10` commands while retaining numeric `/seek` and `/seekback`.
+- `49d8873f` and `1589ac91`: included the new seek aliases in the existing group-mode playback-control permission path.
+- `2daaa8de`: moved synchronous Spotify track/playlist/album/artist API calls off the asyncio event loop; Spotify track-link resolution now has a bounded 10-minute in-memory cache. This improves event-loop responsiveness and repeat lookups, but does not prove live playback latency.
+- `3ef6f303`: command discovery was aligned with the plugin loader's actual `plugins/*/*.py` import depth to avoid exposing commands from unloaded nested files.
+- Code Quality and Syntax Check passed for commit `1589ac91`; rerun/check Actions for the final command-discovery adjustment `3ef6f303`.
+- Still requires a live restart/runtime test: verify Telegram slash menu in a real group, test /forward and /back with admins and groupmode ON/OFF, measure Spotify cold and warm play-start time, and test real assistant voice-chat joining. Do not claim production latency or runtime playback is verified until tested.
+
