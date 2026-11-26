@@ -269,14 +269,42 @@ async def play_command(
 
             if "track" in url:
                 try:
-                    details, track_id = await Spotify.track(url)
+                    spotify_meta = await Spotify.metadata(url)
                 except Exception as e:
-                    return await mystic.edit_text(f"{_['play_3']}\nʀᴇᴀsᴏɴ: {e}")
+                    return await mystic.edit_text(
+                        f"{_['play_3']}\\nSpotify metadata error: {type(e).__name__}"
+                    )
 
-                img = details["thumb"]
-                cap = _["play_10"].format(details["title"], details["duration_min"])
-                internal_type = "youtube"
-                log_label = "Spotify Track"
+                # Spotify Web API supplies catalogue metadata, not a playable
+                # full-length audio stream. Resolve a supported audio provider
+                # using Spotify's exact title + artist before other catalogues.
+                search_query = f"{spotify_meta['title']} {spotify_meta['artist']}".strip()
+                fallback = await SoundCloud.search_and_download(search_query)
+                if fallback:
+                    details, _fallback_path = fallback
+                    details["display_title"] = search_query
+                    details["display_thumb"] = spotify_meta["thumb"] or details.get("thumb")
+                    details["display_source"] = "SOUNDCLOUD · SPOTIFY MATCH"
+                    try:
+                        await stream(
+                            _, mystic, user_id, details, chat_id, user_name,
+                            message.chat.id, video=False, streamtype="soundcloud",
+                            forceplay=bool(fplay),
+                        )
+                    except Exception as stream_error:
+                        err = (
+                            stream_error
+                            if type(stream_error).__name__ == "AssistantErr"
+                            else _["general_2"].format(type(stream_error).__name__)
+                        )
+                        return await mystic.edit_text(err)
+                    await mystic.delete()
+                    return await play_logs(message, streamtype="Spotify match → SoundCloud")
+
+                return await mystic.edit_text(
+                    "Spotify track mil gaya, lekin is track ka supported playable audio source abhi nahi mila. "
+                    "Spotify API khud full song audio stream provide nahi karti. Thodi der baad dobara try karein."
+                )
 
             elif "playlist" in url:
                 try:
@@ -446,61 +474,52 @@ async def play_command(
             f"{spotify_meta['title']} {spotify_meta['artist']}".strip()
             if spotify_meta else query
         )
+
+        # If Spotify recognizes the request, keep its canonical title/artist
+        # and try the supported audio provider before the final catalogue
+        # fallback. Spotify itself does not expose full-track audio streams.
+        if spotify_meta:
+            fallback = await SoundCloud.search_and_download(search_query)
+            if fallback:
+                details, _fallback_path = fallback
+                details["display_title"] = search_query
+                details["display_thumb"] = spotify_meta["thumb"] or details.get("thumb")
+                details["display_source"] = "SOUNDCLOUD · SPOTIFY MATCH"
+                try:
+                    await stream(
+                        _, mystic, user_id, details, chat_id, user_name,
+                        message.chat.id, video=False, streamtype="soundcloud",
+                        forceplay=bool(fplay),
+                    )
+                except Exception as stream_error:
+                    err = (
+                        stream_error
+                        if type(stream_error).__name__ == "AssistantErr"
+                        else _["general_2"].format(type(stream_error).__name__)
+                    )
+                    return await mystic.edit_text(err)
+                await mystic.delete()
+                return await play_logs(message, streamtype="Spotify match → SoundCloud")
+
+        # Spotify had no catalogue match, or the matching audio was not
+        # available from the supported provider: use the final YouTube
+        # metadata lookup, then let the existing stream policy decide.
         try:
             details, track_id = await YouTube.track(search_query)
             if spotify_meta:
-                # Keep YouTube's ID/link for lookup and the existing playback flow,
-                # but display Spotify's canonical title and album artwork.
-                details["title"] = (
-                    f"{spotify_meta['title']} - {spotify_meta['artist']}"
-                    if spotify_meta["artist"] else spotify_meta["title"]
-                )
+                details["title"] = search_query
                 details["thumb"] = spotify_meta["thumb"] or details.get("thumb", "")
                 details["spotify_url"] = spotify_meta["spotify_url"]
                 internal_type = "youtube"
-                log_label = "Spotify metadata + authorized audio lookup"
+                log_label = "Spotify metadata → final catalogue fallback"
             else:
                 internal_type = "youtube"
                 log_label = "Youtube Track"
-        except Exception:
-            # If metadata search fails, keep the existing SoundCloud fallback.
-            fallback = await SoundCloud.search_and_download(search_query)
-            if not fallback:
-                return await mystic.edit_text(
-                    f"{_['play_3']}\\n"
-                    "No metadata/playable match was found. Try another query."
-                )
-            details, _fallback_path = fallback
-            if spotify_meta:
-                details["display_title"] = (
-                    f"{spotify_meta['title']} - {spotify_meta['artist']}"
-                    if spotify_meta["artist"] else spotify_meta["title"]
-                )
-                details["display_thumb"] = spotify_meta["thumb"] or details.get("thumb")
-                details["display_source"] = "SOUNDCLOUD"
-            try:
-                await stream(
-                    _,
-                    mystic,
-                    user_id,
-                    details,
-                    chat_id,
-                    user_name,
-                    message.chat.id,
-                    video=False,
-                    streamtype="soundcloud",
-                    forceplay=bool(fplay),
-                )
-            except Exception as stream_error:
-                err = (
-                    stream_error
-                    if type(stream_error).__name__ == "AssistantErr"
-                    else _["general_2"].format(type(stream_error).__name__)
-                )
-                return await mystic.edit_text(err)
-
-            await mystic.delete()
-            return await play_logs(message, streamtype="SoundCloud fallback")
+        except Exception as e:
+            return await mystic.edit_text(
+                f"{_['play_3']}\\n"
+                f"No supported audio match found ({type(e).__name__}). Try another query."
+            )
 
     if str(playmode) == "Direct":
         if not plist_type:
