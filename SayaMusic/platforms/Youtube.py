@@ -2,7 +2,6 @@
 import asyncio
 import contextlib
 import json
-import os
 import re
 import time
 from typing import Dict, List, Optional, Tuple, Union
@@ -14,7 +13,6 @@ from pyrogram.types import Message
 from youtubesearchpython.aio import VideosSearch, Playlist
 
 from config import YOUTUBE_API_KEY
-from SayaMusic.utils.cookie_handler import COOKIE_PATH
 from SayaMusic.utils.database import is_on_off
 from SayaMusic.utils.downloader import yt_dlp_download
 from SayaMusic.utils.errors import capture_internal_err
@@ -34,21 +32,6 @@ YOUTUBE_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{11}$")
 
 
 # === Helpers ===
-def _cookiefile_path() -> Optional[str]:
-    path = str(COOKIE_PATH)
-    try:
-        if path and os.path.exists(path) and os.path.getsize(path) > 0:
-            return path
-    except Exception:
-        pass
-    return None
-
-
-def _cookies_args() -> List[str]:
-    path = _cookiefile_path()
-    return ["--cookies", path] if path else []
-
-
 async def _exec_proc(*args: str) -> Tuple[bytes, bytes]:
     proc = await asyncio.create_subprocess_exec(
         *args,
@@ -188,15 +171,13 @@ class YouTubeAPI:
 
     # === Metadata Fetching ===
     @staticmethod
-    def _extract_info_sync(target: str, cookiefile: Optional[str] = None) -> Optional[Dict]:
+    def _extract_info_sync(target: str) -> Optional[Dict]:
         base_opts = {
             "quiet": True,
             "no_warnings": True,
             "skip_download": True,
             "noplaylist": True,
         }
-        if cookiefile:
-            base_opts["cookiefile"] = cookiefile
 
         # Use yt-dlp's maintained default YouTube client selection and its
         # installed JavaScript runtime (Deno in the project Docker image).
@@ -218,7 +199,7 @@ class YouTubeAPI:
         target = q if is_url else f"ytsearch1:{q}"
         try:
             info = await asyncio.to_thread(
-                self._extract_info_sync, target, _cookiefile_path()
+                self._extract_info_sync, target
             )
             if info and "entries" in info:
                 entries = info.get("entries") or []
@@ -232,7 +213,7 @@ class YouTubeAPI:
     @capture_internal_err
     async def is_live(self, link: str) -> bool:
         prepared = self._prepare_link(link)
-        stdout, _ = await _exec_proc("yt-dlp", *(_cookies_args()), "--dump-json", prepared)
+        stdout, _ = await _exec_proc("yt-dlp",  "--dump-json", prepared)
         if not stdout:
             return False
         try:
@@ -295,7 +276,7 @@ class YouTubeAPI:
         except Exception as search_err:
             search_error = str(search_err)
             stdout, stderr = await _exec_proc(
-                "yt-dlp", *(_cookies_args()), "--dump-json", "--no-warnings", prepared_link
+                "yt-dlp",  "--dump-json", "--no-warnings", prepared_link
             )
 
             def _both_failed(details: str) -> ValueError:
@@ -342,7 +323,7 @@ class YouTubeAPI:
         link = self._prepare_link(link, videoid)
         stdout, stderr = await _exec_proc(
             "yt-dlp",
-            *(_cookies_args()),
+            
             "-g",
             "-f",
             "best[height<=?720][width<=?1280]",
@@ -368,7 +349,7 @@ class YouTubeAPI:
 
         stdout, _ = await _exec_proc(
             "yt-dlp",
-            *(_cookies_args()),
+            
             "-i",
             "--get-id",
             "--flat-playlist",
@@ -394,8 +375,6 @@ class YouTubeAPI:
                 return cached[1], cached[2]
 
         opts = {"quiet": True}
-        if cf := _cookiefile_path():
-            opts["cookiefile"] = cf
 
         out: List[Dict] = []
         try:
@@ -476,7 +455,7 @@ class YouTubeAPI:
 
             stdout, stderr = await _exec_proc(
                 "yt-dlp",
-                *(_cookies_args()),
+                
                 "--no-warnings",
                 "--no-playlist",
                 "--socket-timeout",
