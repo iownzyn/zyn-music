@@ -220,9 +220,9 @@ async def stream(
             jamendo_track = await _jamendo_search_track(title)
             if not jamendo_track:
                 raise AssistantErr(
-                    "YouTube par song mil gaya, lekin uska close match Jamendo ke "
-                    "licensed catalogue mein nahi mila. Is track ko VC mein play "
-                    "karne ke liye Jamendo par available version chahiye."
+                    "Track ka metadata mil gaya, lekin SoundCloud ya Jamendo par "
+                    "koi authorized playable audio match available nahi mila. "
+                    "Kisi supported audio source se dobara try karein."
                 )
 
             audio_url = jamendo_track.get("audio")
