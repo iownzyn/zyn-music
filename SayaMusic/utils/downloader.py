@@ -12,7 +12,6 @@ from aiohttp import TCPConnector
 from yt_dlp import YoutubeDL
 
 from SayaMusic.core.dir import CACHE_DIR, DOWNLOAD_DIR
-from SayaMusic.utils.cookie_handler import COOKIE_PATH as _COOKIES_FILE
 from SayaMusic.utils.tuning import CHUNK_SIZE, SEM
 from config import API_KEY, API_URL, VIDEO_API_URL
 from SayaMusic.logging import LOGGER
@@ -44,15 +43,6 @@ def extract_video_id(link: str) -> str:
     if YOUTUBE_ID_RE.match(last):
         return last
     return ""
-
-
-def get_cookie_file() -> Optional[str]:
-    try:
-        if _COOKIES_FILE and os.path.exists(_COOKIES_FILE) and os.path.getsize(_COOKIES_FILE) > 0:
-            return _COOKIES_FILE
-    except Exception:
-        pass
-    return None
 
 
 def media_download_dir(media_type: str) -> str:
@@ -112,8 +102,6 @@ def get_ytdlp_base_opts(output_dir: str = DOWNLOAD_DIR) -> Dict[str, object]:
         "ignoreerrors": True,
         "merge_output_format": "mp4"
     }
-    if cookiefile := get_cookie_file():
-        opts["cookiefile"] = cookiefile
     return opts
 
 
