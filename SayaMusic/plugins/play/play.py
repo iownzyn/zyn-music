@@ -599,9 +599,18 @@ async def play_command(
                 else "SoundCloud search",
             )
 
+        # YouTube is the third catalogue lookup (metadata only); Jamendo
+        # remains the final authorized audio-stream fallback.
+        jamendo_query = search_query
+        try:
+            youtube_details, _youtube_id = await YouTube.track(search_query)
+            jamendo_query = youtube_details.get("title") or search_query
+        except Exception:
+            pass
+
         # Jamendo is the final playable catalogue fallback.
         jamendo_track = await _play_jamendo_match(
-            _, mystic, user_id, search_query, chat_id, user_name,
+            _, mystic, user_id, jamendo_query, chat_id, user_name,
             message.chat.id, forceplay=bool(fplay),
         )
         if jamendo_track:
