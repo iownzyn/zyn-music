@@ -60,19 +60,26 @@ class SpotifyAPI:
             raise RuntimeError("Spotify credentials not configured")
         track = self.spotify.track(link)
         info = track["name"]
+        artists = []
         for artist in track["artists"]:
-            fetched = f' {artist["name"]}'
-            if "Various Artists" not in fetched:
-                info += fetched
+            fetched = artist["name"]
+            if fetched and "Various Artists" not in fetched:
+                artists.append(fetched)
+                info += f" {fetched}"
         results = VideosSearch(info, limit=1)
         data = await results.next()
         r = data["result"][0]
+        album_images = (track.get("album") or {}).get("images") or []
+        spotify_artwork = album_images[0].get("url", "") if album_images else ""
         track_details = {
-            "title": r["title"],
+            # Keep the YouTube result ID/link for the existing selection flow,
+            # while using Spotify's canonical metadata and album artwork.
+            "title": f"{track['name']} - {', '.join(artists)}" if artists else track["name"],
             "link": r["link"],
             "vidid": r["id"],
             "duration_min": r["duration"],
-            "thumb": r["thumbnails"][0]["url"].split("?")[0],
+            "thumb": spotify_artwork or r["thumbnails"][0]["url"].split("?")[0],
+            "spotify_url": (track.get("external_urls") or {}).get("spotify", ""),
         }
         return track_details, track_details["vidid"]
 
