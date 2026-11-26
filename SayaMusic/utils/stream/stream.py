@@ -153,20 +153,10 @@ async def stream(
         thumbnail = result["thumb"]
 
         file_path, direct = None, None
-        try:
-            file_path, direct = await YouTube.download(
-                vidid, mystic, video=is_video, videoid=vidid
-            )
-        except Exception as exc:
-            # YouTube can reject cloud-server extraction. Audio requests may
-            # fall back to a separately indexed public SoundCloud result.
-            from SayaMusic.logging import LOGGER as _LOGGER_FACTORY
-            _LOGGER_FACTORY(__name__).warning(
-                "YouTube playback failed; trying audio fallback: %s",
-                type(exc).__name__,
-            )
 
-        if not file_path and not is_video:
+        # YouTube search is used for metadata only. Do not attempt to extract
+        # or download YouTube media from the cloud worker.
+        if not is_video:
             fallback = await SoundCloud.search_and_download(title)
             if fallback:
                 fallback_details, _fallback_path = fallback
@@ -182,12 +172,24 @@ async def stream(
                     streamtype="soundcloud",
                     forceplay=forceplay,
                 )
+            raise AssistantErr(
+                "Is track ka authorized audio source nahi mila. "
+                "Telegram par audio file bhej kar usse play karein, ya koi aur track try karein."
+            )
+
+        # Preserve the existing video path; audio playback does not use YouTube extraction.
+        try:
+            file_path, direct = await YouTube.download(
+                vidid, mystic, video=True, videoid=vidid
+            )
+        except Exception as exc:
+            from SayaMusic.logging import LOGGER as _LOGGER_FACTORY
+            _LOGGER_FACTORY(__name__).warning(
+                "YouTube video playback failed: %s", type(exc).__name__
+            )
 
         if not file_path:
-            raise AssistantErr(
-                "YouTube ne is request ko verify nahi kiya. Audio ke liye alternate source bhi available nahi mila. "
-                "Kisi aur track ya Telegram audio ko try karein."
-            )
+            raise AssistantErr(_["play_14"])
 
         if await is_active_chat(chat_id):
             await put_queue(
