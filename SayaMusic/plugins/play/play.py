@@ -471,6 +471,13 @@ async def play_command(
                     "No metadata/playable match was found. Try another query."
                 )
             details, _fallback_path = fallback
+            if spotify_meta:
+                details["display_title"] = (
+                    f"{spotify_meta['title']} - {spotify_meta['artist']}"
+                    if spotify_meta["artist"] else spotify_meta["title"]
+                )
+                details["display_thumb"] = spotify_meta["thumb"] or details.get("thumb")
+                details["display_source"] = "SOUNDCLOUD"
             try:
                 await stream(
                     _,
