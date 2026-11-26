@@ -14,6 +14,7 @@ from SayaMusic.misc import sudo
 from SayaMusic.plugins import ALL_MODULES
 from SayaMusic.utils.database import get_banned_users, get_gbanned
 from SayaMusic.utils.cookie_handler import fetch_and_store_cookies
+from SayaMusic.utils.bot_commands import register_telegram_commands
 from config import BANNED_USERS
 
 # Readiness is separate from liveness: Render must not mistake a half-started
@@ -82,6 +83,9 @@ async def init():
         for all_module in ALL_MODULES:
             importlib.import_module("SayaMusic.plugins" + all_module)
         LOGGER("SayaMusic.plugins").info("ZYN MUSIC modules loaded.")
+
+        # Publish the real slash-command menu after every plugin handler is loaded.
+        await register_telegram_commands(app)
 
         # Cookie fetching uses its own requests client; do it only after the
         # bot is authorized and only when a private cookie URL is configured.
