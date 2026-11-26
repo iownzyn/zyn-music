@@ -446,5 +446,5 @@ class YouTubeAPI:
                 print(f"yt-dlp video stream extraction failed: {stderr.decode('utf-8', errors='ignore')[-500:]}")
             return None, None
 
-        p = await yt_dlp_download(link, type="audio", title=await self.title(link))
+        p = await yt_dlp_download(link, type="audio", title="")
         return (p, True) if p else (None, None)
