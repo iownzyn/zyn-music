@@ -219,11 +219,7 @@ async def stream(
         if not is_video:
             jamendo_track = await _jamendo_search_track(title)
             if not jamendo_track:
-                raise AssistantErr(
-                    "Track ka metadata mil gaya, lekin SoundCloud ya Jamendo par "
-                    "koi authorized playable audio match available nahi mila. "
-                    "Kisi supported audio source se dobara try karein."
-                )
+                raise AssistantErr("Can't find this song, try another song.")
 
             audio_url = jamendo_track.get("audio")
             artist = jamendo_track.get("artist_name") or "Unknown artist"
