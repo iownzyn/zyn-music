@@ -20,11 +20,19 @@ def speed_markup(_, chat_id):
                     text="1.0x",
                     callback_data=f"SpeedUP {chat_id}|1.0",
                 ),
+                InlineKeyboardButton(
+                    text="1.25x",
+                    callback_data=f"SpeedUP {chat_id}|1.25",
+                ),
             ],
             [
                 InlineKeyboardButton(
                     text="1.5x",
                     callback_data=f"SpeedUP {chat_id}|1.5",
+                ),
+                InlineKeyboardButton(
+                    text="1.75x",
+                    callback_data=f"SpeedUP {chat_id}|1.75",
                 ),
                 InlineKeyboardButton(
                     text="2.0x",
