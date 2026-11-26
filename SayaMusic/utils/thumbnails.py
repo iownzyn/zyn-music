@@ -112,12 +112,13 @@ def _draw_original_couple_scene() -> Image.Image:
     return image
 
 
-async def get_thumb(videoid: str) -> str:
+async def get_thumb(videoid: str, title: str = "Now Playing", source: str = "YouTube", duration: str = "Music") -> str:
     """Return a fresh Zayn × Alfiya couple artwork for each normal /play request."""
     # Artwork must never wait on a second YouTube metadata request.
     # The track title is already shown in the Telegram caption/player panel.
-    title, duration, views = "Now Playing", None, "ZYN MUSIC"
-    duration_text = "Music"
+    title = (title or "Now Playing").strip()
+    source = (source or "Music").strip()
+    duration_text = (duration or "Music").strip()
 
     bg = _draw_original_couple_scene().convert("RGBA")
     draw = ImageDraw.Draw(bg)
@@ -138,7 +139,7 @@ async def get_thumb(videoid: str) -> str:
                            fill=(250, 247, 241, 232), outline=(192, 159, 151, 255), width=2)
     draw.text((160, 565), trim_to_width(title, title_font, 950),
               fill=(48, 43, 47), font=title_font)
-    draw.text((160, 622), f"YouTube  ·  {views}", fill=(105, 86, 87), font=regular_font)
+    draw.text((160, 622), f"{source}  ·  ZYN MUSIC", fill=(105, 86, 87), font=regular_font)
 
     # Minimal progress motif and duration.
     draw.rounded_rectangle((160, 665, 1080, 674), radius=5, fill=(218, 207, 199))
