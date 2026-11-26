@@ -287,6 +287,48 @@ async def play_command(
                 internal_type = "youtube"
                 log_label = "Youtube shorts" if "youtube.com/shorts/" in u else "Youtube Track"
 
+                # A pasted YouTube URL must follow the same provider order as
+                # a text search: Spotify metadata (when available), SoundCloud,
+                # Jamendo, and YouTube metadata last. Do not send audio requests
+                # straight into the Jamendo-only YouTube stream branch.
+                if not video:
+                    yt_title = details.get("title") or ""
+                    yt_artist_query = yt_title
+                    sc_match = await SoundCloud.search_and_download(yt_artist_query)
+                    if sc_match:
+                        sc_details, _sc_path = sc_match
+                        sc_details["display_title"] = yt_title
+                        sc_details["display_source"] = "SOUNDCLOUD · YOUTUBE SEARCH"
+                        try:
+                            await stream(
+                                _, mystic, user_id, sc_details, chat_id, user_name,
+                                message.chat.id, video=False, streamtype="soundcloud",
+                                forceplay=bool(fplay),
+                            )
+                        except Exception as stream_error:
+                            err = (
+                                stream_error
+                                if type(stream_error).__name__ == "AssistantErr"
+                                else _["general_2"].format(type(stream_error).__name__)
+                            )
+                            return await mystic.edit_text(err)
+                        await mystic.delete()
+                        return await play_logs(message, streamtype="YouTube title → SoundCloud")
+
+                    jamendo_track = await _play_jamendo_match(
+                        _, mystic, user_id, yt_artist_query, chat_id, user_name,
+                        message.chat.id, forceplay=bool(fplay),
+                    )
+                    if jamendo_track:
+                        await mystic.delete()
+                        return await play_logs(message, streamtype="YouTube title → Jamendo")
+
+                    return await mystic.edit_text(
+                        "YouTube par track mil gaya, lekin SoundCloud aur Jamendo ke "
+                        "authorized playable catalogue mein audio match nahi mila. "
+                        "Isliye bina licensed audio source ke VC playback start nahi kiya."
+                    )
+
         elif await Spotify.valid(url):
             spotify = True
             if not config.SPOTIFY_CLIENT_ID or not config.SPOTIFY_CLIENT_SECRET:
