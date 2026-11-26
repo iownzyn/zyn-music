@@ -52,6 +52,7 @@ COOKIE_URL = getenv("COOKIE_URL", "")  # Optional Netscape-format YouTube cookie
 API_URL = getenv("API_URL", "https://pvtz.nexgenbots.xyz")
 VIDEO_API_URL = getenv("VIDEO_API_URL", "https://api.video.nexgenbots.xyz")
 API_KEY = getenv("API_KEY", "")
+YOUTUBE_API_KEY = getenv("YOUTUBE_API_KEY", "").strip()
 DEEP_API = getenv("DEEP_API", "")
 
 # ── Git / updates ──────────────────────────────────────────────────────────────
