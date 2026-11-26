@@ -47,7 +47,34 @@ async def helper_private(client: Client, update: Union[Message, types.CallbackQu
 
 @app.on_message(filters.command(["help"]) & filters.group & ~BANNED_USERS)
 @LanguageStart
-NaN
+
+async def helper_group(client: Client, message: Message):
+    text = (
+        "**𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 — GROUP COMMANDS**\n\n"
+        "**Music**\n"
+        "/play <song> — Play a song\n"
+        "/vplay <song> — Play video\n"
+        "/pause — Pause playback\n"
+        "/resume — Resume playback\n"
+        "/skip — Skip current track\n"
+        "/stop — Stop playback\n"
+        "/queue — Show queue\n"
+        "/forward <seconds> — Seek forward\n"
+        "/back <seconds> — Seek backward\n"
+        "/seek <time> — Jump to a time\n"
+        "/speed <1-2> — Change playback speed\n"
+        "/volume <1-200> — Set volume\n\n"
+        "**Group tools**\n"
+        "/groupmode on — Enable group mode\n"
+        "/groupmode off — Disable group mode\n"
+        "/groupmode status — Check group mode\n"
+        "/tagall — Mention group members\n"
+        "/chess — Start chess\n"
+        "/dice — Roll a dice\n\n"
+        "Tip: type **/** in the message box to view commands registered for this bot."
+    )
+    await message.reply_text(text, disable_web_page_preview=True)
+
 
 # ────────────────────────────────────────────────  main help buttons ──
 
