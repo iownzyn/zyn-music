@@ -1,4 +1,5 @@
 # Saya Music
+import asyncio
 import re
 
 import spotipy
@@ -25,6 +26,34 @@ class SpotifyAPI:
 
     async def valid(self, link: str) -> bool:
         return bool(re.search(self.regex, link or ""))
+
+
+    async def search(self, query: str):
+        """Search Spotify metadata only; never returns an audio stream."""
+        if not self.spotify:
+            return None
+
+        def _search():
+            return self.spotify.search(q=query, type="track", limit=1)
+
+        try:
+            payload = await asyncio.to_thread(_search)
+            items = (payload.get("tracks") or {}).get("items") or []
+            if not items:
+                return None
+            track = items[0]
+            artists = ", ".join(a.get("name", "") for a in track.get("artists", []) if a.get("name"))
+            images = ((track.get("album") or {}).get("images") or [])
+            return {
+                "title": track.get("name", ""),
+                "artist": artists,
+                "album": (track.get("album") or {}).get("name", ""),
+                "thumb": images[0].get("url", "") if images else "",
+                "spotify_url": ((track.get("external_urls") or {}).get("spotify", "")),
+                "duration_ms": track.get("duration_ms", 0),
+            }
+        except Exception:
+            return None
 
     async def track(self, link: str):
         if not self.spotify:
