@@ -31,14 +31,16 @@ from SayaMusic.utils.stream.stream import stream, _jamendo_search_track
 
 
 
-async def _play_artwork(video_id, fallback):
-    """Use the branded, per-track artwork for normal /play result cards."""
+async def _play_artwork(video_id, fallback, title=None):
+    """Prefer the provider's real track thumbnail; generate branded art only as fallback."""
+    if fallback:
+        return fallback
     try:
         if video_id:
-            return await get_thumb(video_id)
+            return await get_thumb(video_id, title=title or "Now Playing")
     except Exception:
         pass
-    return fallback
+    return config.YOUTUBE_IMG_URL
 
 
 async def _play_jamendo_match(_, mystic, user_id, query, chat_id, user_name, original_chat_id, forceplay=False):
@@ -540,21 +542,43 @@ async def play_command(
             query = query.replace("-v", "")
 
 
-        # Resolve Spotify metadata and SoundCloud audio in parallel for speed.
-        # Spotify Web API provides metadata, not a full-track Telegram VC stream.
+        # Start Spotify metadata and SoundCloud audio lookup together. If
+        # SoundCloud already has a playable result, don't make users wait for
+        # the slower metadata request to finish.
+        spotify_meta, soundcloud_match = None, None
+        spotify_task = asyncio.create_task(Spotify.search(query))
+        soundcloud_task = asyncio.create_task(SoundCloud.search_and_download(query))
         try:
-            spotify_meta, soundcloud_match = await asyncio.gather(
-                Spotify.search(query),
-                SoundCloud.search_and_download(query),
-                return_exceptions=True,
+            done, _pending = await asyncio.wait(
+                (spotify_task, soundcloud_task),
+                return_when=asyncio.FIRST_COMPLETED,
             )
-        except Exception:
-            spotify_meta, soundcloud_match = None, None
-
-        if isinstance(spotify_meta, Exception):
-            spotify_meta = None
-        if isinstance(soundcloud_match, Exception):
-            soundcloud_match = None
+            if soundcloud_task in done:
+                try:
+                    soundcloud_match = soundcloud_task.result()
+                except Exception:
+                    soundcloud_match = None
+                if soundcloud_match:
+                    spotify_task.cancel()
+                    await asyncio.gather(spotify_task, return_exceptions=True)
+                else:
+                    try:
+                        spotify_meta = await spotify_task
+                    except Exception:
+                        spotify_meta = None
+            else:
+                try:
+                    spotify_meta = spotify_task.result()
+                except Exception:
+                    spotify_meta = None
+                try:
+                    soundcloud_match = await soundcloud_task
+                except Exception:
+                    soundcloud_match = None
+        finally:
+            for task in (spotify_task, soundcloud_task):
+                if not task.done():
+                    task.cancel()
 
         search_query = (
             f"{spotify_meta['title']} {spotify_meta['artist']}".strip()
@@ -717,7 +741,7 @@ async def play_command(
                     "f" if fplay else "d",
                 )
                 await mystic.delete()
-                artwork = await _play_artwork(track_id, details.get("thumb"))
+                artwork = await _play_artwork(track_id, details.get("thumb"), details.get("title"))
                 await message.reply_photo(
                     photo=artwork,
                     caption=_["play_10"].format(
