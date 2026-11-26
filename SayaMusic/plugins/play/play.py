@@ -537,9 +537,15 @@ async def play_command(
                     if duration_seconds and duration_seconds > config.DURATION_LIMIT:
                         return await mystic.edit_text(_["play_6"].format(config.DURATION_LIMIT_MIN, app.mention))
                     try:
+                        stream_details = {
+                            "link": audio_url,
+                            "title": str(selected.get("title") or query),
+                            "duration_min": duration if duration != "Unknown" else "00:00",
+                            "thumb": (selected.get("thumbnails") or [{}])[0].get("url") or config.STREAM_IMG_URL,
+                        }
                         await stream(
-                            _, mystic, user_id, audio_url, chat_id, user_name,
-                            message.chat.id, video=False, streamtype="index",
+                            _, mystic, user_id, stream_details, chat_id, user_name,
+                            message.chat.id, video=False, streamtype="riteshyt",
                             forceplay=bool(fplay),
                         )
                     except Exception as provider_error:
