@@ -69,6 +69,7 @@ def AdminRightsCheck(mystic):
         if command_name.startswith("c") and command_name[1:] in {
             "pause", "resume", "skip", "next", "loop", "shuffle",
             "seek", "seekback", "volume", "vol", "speed", "slow", "playback",
+            "forward", "back", "forward10", "back10", "rewind10", "backward10",
         }:
             command_name = command_name[1:]
         shared_control_commands = {
