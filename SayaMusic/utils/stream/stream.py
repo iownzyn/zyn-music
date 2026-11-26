@@ -160,6 +160,11 @@ async def stream(
             fallback = await SoundCloud.search_and_download(title)
             if fallback:
                 fallback_details, _fallback_path = fallback
+                # Preserve preferred catalogue metadata while clearly marking
+                # the actual provider that supplies the playable audio.
+                fallback_details["display_title"] = result.get("title") or fallback_details.get("title")
+                fallback_details["display_thumb"] = result.get("thumb") or fallback_details.get("thumb")
+                fallback_details["display_source"] = "SOUNDCLOUD"
                 return await stream(
                     _,
                     mystic,
@@ -207,7 +212,7 @@ async def stream(
             button = aq_markup(_, chat_id)
             await app.send_message(
                 chat_id=original_chat_id,
-                text=_["queue_4"].format(position, title[:27], duration_min, user_name),
+                text=_["queue_4"].format(position, f"[{source_label}] {title}"[:27], duration_min, user_name),
                 reply_markup=InlineKeyboardMarkup(button),
             )
         else:
@@ -250,8 +255,9 @@ async def stream(
 
     elif streamtype == "soundcloud":
         file_path = result["filepath"]
-        title = result["title"]
+        title = result.get("display_title") or result["title"]
         duration_min = result["duration_min"]
+        source_label = result.get("display_source") or "SOUNDCLOUD"
         if not file_path:
             raise AssistantErr(_["play_14"])
 
@@ -293,9 +299,9 @@ async def stream(
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 original_chat_id,
-                photo=config.SOUNCLOUD_IMG_URL,
+                photo=result.get("display_thumb") or config.SOUNCLOUD_IMG_URL,
                 caption=_["stream_1"].format(
-                    config.SUPPORT_CHAT, title[:23], duration_min, user_name
+                    config.SUPPORT_CHAT, f"[{source_label}] {title}"[:23], duration_min, user_name
                 ),
                 reply_markup=InlineKeyboardMarkup(button),
             )
