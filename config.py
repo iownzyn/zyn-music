@@ -54,8 +54,6 @@ VIDEO_API_URL = getenv("VIDEO_API_URL", "https://api.video.nexgenbots.xyz")
 API_KEY = getenv("API_KEY", "")
 YOUTUBE_API_KEY = getenv("YOUTUBE_API_KEY", "")
 JAMENDO_CLIENT_ID = getenv("JAMENDO_CLIENT_ID", "")
-RITESHYT_API_URL = getenv("RITESHYT_API_URL", "https://api.riteshyt.in").rstrip("/")
-RITESHYT_API_KEY = getenv("RITESHYT_API_KEY", "")
 DEEP_API = getenv("DEEP_API", "")
 
 # ── Git / updates ──────────────────────────────────────────────────────────────
