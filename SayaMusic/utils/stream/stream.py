@@ -275,7 +275,7 @@ async def stream(
                     forceplay=forceplay,
                 )
                 caption = (
-                    f"♫ {jamendo_title}\\n"
+                    f"♫ {jamendo_title}\n"
                     f"Artist: {artist}\\n"
                     f"Source: Jamendo\\n"
                     f"Licence: {license_url}\\n"
