@@ -23,8 +23,8 @@ from SayaMusic.utils.errors import capture_internal_err
 
 
 def _normalize_track_name(value: str) -> str:
-    value = re.sub(r"\\([^)]*\\)|\\[[^]]*\\]", " ", (value or "").lower())
-    value = re.sub(r"\\b(official|video|audio|lyrics?|visualizer|4k|hd|full song)\\b", " ", value)
+    value = re.sub(r"\([^)]*\)|\[[^]]*\]", " ", (value or "").lower())
+    value = re.sub(r"\b(official|video|audio|lyrics?|visualizer|4k|hd|full song)\b", " ", value)
     return re.sub(r"[^a-z0-9]+", " ", value).strip()
 
 
