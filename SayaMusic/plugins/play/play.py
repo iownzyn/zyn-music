@@ -595,7 +595,7 @@ async def play_command(
 
         if soundcloud_match:
             details, _fallback_path = soundcloud_match
-            details["display_title"] = search_query
+            details["display_title"] = details.get("title") or search_query
             details["display_thumb"] = (
                 (spotify_meta or {}).get("thumb") or details.get("thumb")
             )
