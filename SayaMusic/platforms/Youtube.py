@@ -8,10 +8,12 @@ import time
 from typing import Dict, List, Optional, Tuple, Union
 
 import yt_dlp
+import aiohttp
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
 from youtubesearchpython.aio import VideosSearch, Playlist
 
+from config import YOUTUBE_API_KEY
 from SayaMusic.utils.cookie_handler import COOKIE_PATH
 from SayaMusic.utils.database import is_on_off
 from SayaMusic.utils.downloader import yt_dlp_download
@@ -75,11 +77,59 @@ async def cached_youtube_search(query: str) -> List[Dict]:
         if len(_cache) > YOUTUBE_META_MAX:
             _cache.clear()
 
-    try:
-        data = await VideosSearch(query, limit=1).next()
-        result = data.get("result", [])
-    except Exception:
-        result = []
+    result = []
+
+    # Prefer the official YouTube Data API for search metadata when configured.
+    # This endpoint returns video IDs/titles/thumbnails, not playable audio URLs.
+    if YOUTUBE_API_KEY:
+        try:
+            timeout = aiohttp.ClientTimeout(total=12)
+            params = {
+                "part": "snippet",
+                "q": query,
+                "type": "video",
+                "maxResults": 1,
+                "key": YOUTUBE_API_KEY,
+            }
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(
+                    "https://www.googleapis.com/youtube/v3/search", params=params
+                ) as response:
+                    if response.status == 200:
+                        payload = await response.json()
+                        for item in payload.get("items", []):
+                            video_id = (item.get("id") or {}).get("videoId")
+                            snippet = item.get("snippet") or {}
+                            if not video_id:
+                                continue
+                            thumbs = snippet.get("thumbnails") or {}
+                            thumb = (
+                                (thumbs.get("high") or {}).get("url")
+                                or (thumbs.get("medium") or {}).get("url")
+                                or (thumbs.get("default") or {}).get("url")
+                                or ""
+                            )
+                            result.append({
+                                "id": video_id,
+                                "title": snippet.get("title", ""),
+                                "thumbnail": thumb,
+                                "thumbnails": [{"url": thumb}] if thumb else [],
+                                "duration": None,
+                            })
+                    else:
+                        body = await response.text()
+                        print(f"YouTube Data API search failed: HTTP {response.status}: {body[:250]}")
+        except Exception as exc:
+            print(f"YouTube Data API search error: {type(exc).__name__}")
+
+    # Keep the existing search provider as a fallback if the official API
+    # returns no results or is unavailable.
+    if not result:
+        try:
+            data = await VideosSearch(query, limit=1).next()
+            result = data.get("result", [])
+        except Exception:
+            result = []
 
     if result:
         async with _cache_lock:
