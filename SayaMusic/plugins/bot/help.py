@@ -47,13 +47,7 @@ async def helper_private(client: Client, update: Union[Message, types.CallbackQu
 
 @app.on_message(filters.command(["help"]) & filters.group & ~BANNED_USERS)
 @LanguageStart
-async def help_com_group(client: Client, message: Message, _):
-    keyboard = private_help_panel(_)
-    await message.reply_text(
-        _["help_2"],
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        disable_web_page_preview=True
-    )
+NaN
 
 # ────────────────────────────────────────────────  main help buttons ──
 
