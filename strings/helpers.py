@@ -208,21 +208,33 @@ starts streaming the ongoing stream in a loop.
 
 # -----------------------------------------------------------------------
 HELP_16 = """
-<b><u>group management :</u></b>
+<b><u>group commands & management :</u></b>
 
-- /pin : pins a message in the group.
-- /unpin : unpins the currently pinned message.
-- /staff : displays the list of staff members.
-- /bots : displays the list of bots in the group.
-- /settitle : sets the title of the group.
-- /setdescription : sets the description of the group.
-- /welcome on/off : turn member welcome and automatic goodbye messages on or off.
-- /setphoto : sets the group photo.
-- /removephoto : removes the group photo.
-- /zombies : removes deleted accounts from the group.
-- /imposter on/off : turns on or off the watcher for your group, which notifies about users who change their name or username.
+<b>Group information & setup</b>
+- /id : show the group ID (reply to a message to get that user's ID).
+- /groupdata or /groupinfo : show group information.
+- /staff : display group staff members.
+- /bots : list bots in the group.
+- /settitle : change the group title.
+- /setdescription : change the group description.
+- /setphoto : change the group photo (reply to an image).
+- /removephoto : remove the group photo.
 - /lang : change the bot language.
 
+<b>Group moderation & utilities</b>
+- /pin : pin a replied-to message.
+- /unpin : unpin a replied-to message.
+- /zombies : remove deleted accounts.
+- /imposter on/off : enable or disable name/username change alerts.
+- /welcome on/off : control welcome and goodbye messages.
+
+<b>Music controls for this group</b>
+- /groupmode on : allow members to use normal playback controls.
+- /groupmode off : restrict playback controls to group admins.
+- /groupmode status : show the current group mode.
+- /stop and /end remain admin-only.
+
+For member-wide mentions, see the separate <b>Tag All</b> section.
 """
 
 # -----------------------------------------------------------------------
