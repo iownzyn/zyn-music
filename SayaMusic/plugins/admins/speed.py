@@ -56,7 +56,7 @@ async def manage_callback(client, CallbackQuery, _):
     if not CallbackQuery.message or CallbackQuery.message.chat.id != chat_id:
         return await CallbackQuery.answer("This control belongs to another group.", show_alert=True)
 
-    if speed not in {"0.5", "0.75", "1.0", "1.5", "2.0"}:
+    if speed not in {"0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0"}:
         return await CallbackQuery.answer("Unsupported playback speed.", show_alert=True)
 
     if not await is_active_chat(chat_id):
