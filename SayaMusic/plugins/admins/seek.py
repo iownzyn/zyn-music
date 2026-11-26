@@ -11,17 +11,24 @@ from config import BANNED_USERS
 
 
 @app.on_message(
-    filters.command(["seek", "cseek", "seekback", "cseekback"])
+    filters.command(["seek", "cseek", "seekback", "cseekback", "forward", "back", "forward10", "back10", "rewind10", "backward10"])
     & filters.group
     & ~BANNED_USERS
 )
 @AdminRightsCheck
 async def seek_comm(cli, message: Message, _, chat_id):
-    if len(message.command) == 1:
-        return await message.reply_text(_["admin_20"])
-    query = message.text.split(None, 1)[1].strip()
-    if not query.isnumeric():
-        return await message.reply_text(_["admin_21"])
+    command_name = message.command[0].lower()
+    fixed_forward = {"forward", "forward10"}
+    fixed_backward = {"back", "back10", "rewind10", "backward10"}
+    if command_name in fixed_forward | fixed_backward:
+        duration_to_skip = 10
+    else:
+        if len(message.command) == 1:
+            return await message.reply_text(_["admin_20"])
+        query = message.text.split(None, 1)[1].strip()
+        if not query.isnumeric():
+            return await message.reply_text(_["admin_21"])
+        duration_to_skip = int(query)
     playing = db.get(chat_id)
     if not playing:
         return await message.reply_text(_["queue_2"])
@@ -30,9 +37,9 @@ async def seek_comm(cli, message: Message, _, chat_id):
         return await message.reply_text(_["admin_22"])
     file_path = playing[0]["file"]
     duration_played = int(playing[0]["played"])
-    duration_to_skip = int(query)
     duration = playing[0]["dur"]
-    if message.command[0][-2] == "c":
+    is_backward = command_name in fixed_backward or command_name in {"seekback", "cseekback"}
+    if is_backward:
         if (duration_played - duration_to_skip) <= 10:
             return await message.reply_text(
                 text=_["admin_23"].format(seconds_to_min(duration_played), duration),
@@ -66,7 +73,7 @@ async def seek_comm(cli, message: Message, _, chat_id):
         )
     except:
         return await mystic.edit_text(_["admin_26"], reply_markup=close_markup(_))
-    if message.command[0][-2] == "c":
+    if is_backward:
         db[chat_id][0]["played"] -= duration_to_skip
     else:
         db[chat_id][0]["played"] += duration_to_skip
