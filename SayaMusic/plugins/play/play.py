@@ -59,8 +59,8 @@ async def _play_jamendo_match(_, mystic, user_id, query, chat_id, user_name, ori
 
     try:
         await stream(
-            _, mystic, user_id, audio_url, chat_id, user_name,
-            original_chat_id, video=False, streamtype="index",
+            _, mystic, user_id, track, chat_id, user_name,
+            original_chat_id, video=False, streamtype="jamendo",
             forceplay=bool(forceplay),
         )
     except Exception:
@@ -299,7 +299,7 @@ async def play_command(
                     sc_match = await SoundCloud.search_and_download(yt_artist_query)
                     if sc_match:
                         sc_details, _sc_path = sc_match
-                        sc_details["display_title"] = yt_title
+                        sc_details["display_title"] = sc_details.get("title") or yt_title
                         sc_details["display_source"] = "SOUNDCLOUD · YOUTUBE SEARCH"
                         try:
                             await stream(
@@ -349,7 +349,7 @@ async def play_command(
                 fallback = await SoundCloud.search_and_download(search_query)
                 if fallback:
                     details, _fallback_path = fallback
-                    details["display_title"] = search_query
+                    details["display_title"] = details.get("title") or search_query
                     details["display_thumb"] = spotify_meta["thumb"] or details.get("thumb")
                     details["display_source"] = "SOUNDCLOUD · SPOTIFY MATCH"
                     try:
