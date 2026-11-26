@@ -168,9 +168,11 @@ async def api_download_audio(link: str) -> Optional[str]:
     poll_url = f"{API_URL}/song/{vid}?api={API_KEY}"
     try:
         session = await get_http_session()
-        while True:
+        # Poll for at most 30 seconds; a stalled provider must not hang /play.
+        for _ in range(30):
             async with session.get(poll_url) as r:
                 if r.status != 200:
+                    LOGGER.warning("Audio API returned HTTP %s", r.status)
                     return None
                 data = await r.json()
                 status = str(data.get("status", "")).lower()
@@ -178,12 +180,15 @@ async def api_download_audio(link: str) -> Optional[str]:
                     await asyncio.sleep(1.0)
                     continue
                 if status != "done":
+                    LOGGER.warning("Audio API ended with status: %s", status or "unknown")
                     return None
                 dl_url = data.get("link")
                 fmt = data.get("format", "webm")
                 safe_fmt = re.sub(r"[^a-zA-Z0-9]", "", str(fmt)) or "webm"
                 out_path = os.path.join(provider_download_dir("audio", "api"), f"{vid}.{safe_fmt}")
                 return await download_file(dl_url, out_path)
+        LOGGER.warning("Audio API timed out while waiting for provider")
+        return None
     except Exception:
         return None
 
@@ -197,9 +202,11 @@ async def api_download_video(link: str) -> Optional[str]:
     poll_url = f"{VIDEO_API_URL}/video/{vid}?api={API_KEY}"
     try:
         session = await get_http_session()
-        while True:
+        # Poll for at most 30 seconds; a stalled provider must not hang playback.
+        for _ in range(30):
             async with session.get(poll_url) as r:
                 if r.status != 200:
+                    LOGGER.warning("Video API returned HTTP %s", r.status)
                     return None
                 data = await r.json()
                 status = str(data.get("status", "")).lower()
@@ -207,12 +214,15 @@ async def api_download_video(link: str) -> Optional[str]:
                     await asyncio.sleep(1.0)
                     continue
                 if status != "done":
+                    LOGGER.warning("Video API ended with status: %s", status or "unknown")
                     return None
                 dl_url = data.get("link")
                 fmt = data.get("format", "mp4")
                 safe_fmt = re.sub(r"[^a-zA-Z0-9]", "", str(fmt)) or "mp4"
                 out_path = os.path.join(provider_download_dir("video", "api"), f"{vid}.{safe_fmt}")
                 return await download_file(dl_url, out_path)
+        LOGGER.warning("Video API timed out while waiting for provider")
+        return None
     except Exception:
         return None
 
