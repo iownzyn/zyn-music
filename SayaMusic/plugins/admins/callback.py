@@ -390,10 +390,10 @@ async def handle_seek(callback: CallbackQuery, _, chat_id: int, command: str, us
         )
     except Exception:
         return await mystic.edit_text(_["admin_26"])
-    if int(command) in [1, 3]:
-        db[chat_id][0]["played"] -= duration_to_skip
+    if command == "Back" or (command not in {"Forward", "Back"} and int(command) in [1, 3]):
+        db[chat_id][0]["played"] = max(0, db[chat_id][0]["played"] - duration_to_skip)
     else:
-        db[chat_id][0]["played"] += duration_to_skip
+        db[chat_id][0]["played"] = min(duration_seconds, db[chat_id][0]["played"] + duration_to_skip)
     seek_message = _["admin_25"].format(seconds_to_min(to_seek))
     await mystic.edit_text(f"{seek_message}\n\nᴄʜᴀɴɢᴇs ᴅᴏɴᴇ ʙʏ : {user_mention} !")
 
