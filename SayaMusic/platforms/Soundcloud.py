@@ -13,6 +13,11 @@ _SC_RE = re.compile(r"^https?://(soundcloud\.com|on\.soundcloud\.com)/.+", re.I)
 
 
 class SoundAPI:
+    def __init__(self):
+        # Cache resolved SoundCloud matches to avoid repeating provider searches.
+        self._search_cache = {}
+        self._search_cache_ttl = 600
+
     async def valid(self, link: str) -> bool:
         return bool(link and _SC_RE.match(link))
 
@@ -38,9 +43,18 @@ class SoundAPI:
 
     async def search_and_download(self, query: str) -> Union[Tuple[Dict[str, Any], str], bool]:
         """Search SoundCloud as a fallback when YouTube blocks metadata extraction."""
-        query = (query or "").strip()
+        query = " ".join((query or "").split()).strip()
         if not query:
             return False
+
+        cache_key = query.casefold()
+        cached = self._search_cache.get(cache_key)
+        if cached:
+            import os
+            cached_at, cached_details, cached_path = cached
+            if asyncio.get_running_loop().time() - cached_at < self._search_cache_ttl and os.path.isfile(cached_path):
+                return dict(cached_details), cached_path
+            self._search_cache.pop(cache_key, None)
 
         def _search(q: str):
             opts = {
@@ -56,7 +70,9 @@ class SoundAPI:
 
         try:
             loop = asyncio.get_running_loop()
-            entries = await loop.run_in_executor(None, _search, query)
+            entries = await asyncio.wait_for(
+                loop.run_in_executor(None, _search, query), timeout=15
+            )
         except Exception:
             return False
 
@@ -66,9 +82,19 @@ class SoundAPI:
                 continue
             if not str(url).startswith("http"):
                 url = f"https://soundcloud.com/{url.lstrip('/')}"
-            result = await self.download(url)
+            try:
+                result = await asyncio.wait_for(self.download(url), timeout=45)
+            except Exception:
+                result = False
             if result:
-                return result
+                details, file_path = result
+                self._search_cache[cache_key] = (
+                    asyncio.get_running_loop().time(), dict(details), file_path
+                )
+                if len(self._search_cache) > 256:
+                    oldest = min(self._search_cache, key=lambda key: self._search_cache[key][0])
+                    self._search_cache.pop(oldest, None)
+                return details, file_path
         return False
 
     async def download(self, url: str) -> Union[Tuple[Dict[str, Any], str], bool]:
