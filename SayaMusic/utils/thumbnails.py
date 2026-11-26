@@ -113,9 +113,9 @@ def _draw_original_couple_scene() -> Image.Image:
 
 
 async def get_thumb(videoid: str, title: str = "Now Playing", source: str = "YouTube", duration: str = "Music") -> str:
-    """Return a fresh Zayn × Alfiya couple artwork for each normal /play request."""
+    """Create branded fallback artwork with the actual track title and source."""
     # Artwork must never wait on a second YouTube metadata request.
-    # The track title is already shown in the Telegram caption/player panel.
+    # The real track title is also rendered directly on the artwork.
     title = (title or "Now Playing").strip()
     source = (source or "Music").strip()
     duration_text = (duration or "Music").strip()
