@@ -183,31 +183,62 @@ class Call:
     async def speedup_stream(self, chat_id: int, file_path: str, speed: float, playing: list) -> None:
         if not isinstance(playing, list) or not playing or not isinstance(playing[0], dict):
             raise AssistantErr("Invalid stream info for speedup.")
+        if not os.path.isfile(file_path):
+            raise AssistantErr("Original audio file is no longer available.")
 
         assistant = await group_assistant(self, chat_id)
+        is_video = playing[0]["streamtype"] == "video"
         base = os.path.basename(file_path)
         chatdir = os.path.join("playback", str(speed))
         os.makedirs(chatdir, exist_ok=True)
         out = os.path.join(chatdir, base)
 
-        if not os.path.exists(out):
-            vs = str(2.0 / float(speed))
-            cmd = f'ffmpeg -i "{file_path}" -filter:v "setpts={vs}*PTS" -filter:a atempo={speed} -y "{out}"'
-            proc = await asyncio.create_subprocess_shell(
-                cmd,
-                stdin=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            await proc.communicate()
+        # Reuse a completed speed variant. Never treat a partial FFmpeg output
+        # as a cache hit; publish the result atomically after FFmpeg succeeds.
+        if not os.path.isfile(out) or os.path.getsize(out) == 0:
+            stem, ext = os.path.splitext(out)
+            temp_out = f"{stem}.building{ext}"
+            with contextlib.suppress(OSError):
+                os.remove(temp_out)
 
-        dur = int(await asyncio.get_event_loop().run_in_executor(None, check_duration, out))
+            args = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", file_path]
+            if is_video:
+                args.extend(["-filter:v", f"setpts={2.0 / float(speed)}*PTS"])
+            else:
+                args.append("-vn")
+            args.extend(["-filter:a", f"atempo={float(speed)}", "-threads", "0", temp_out])
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    *args,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                _, stderr = await asyncio.wait_for(proc.communicate(), timeout=180)
+                if proc.returncode != 0 or not os.path.isfile(temp_out) or os.path.getsize(temp_out) == 0:
+                    detail = stderr.decode("utf-8", errors="ignore")[-300:] if stderr else "unknown FFmpeg error"
+                    raise AssistantErr(f"Speed conversion failed: {detail}")
+                os.replace(temp_out, out)
+            except asyncio.TimeoutError:
+                with contextlib.suppress(Exception):
+                    proc.kill()
+                    await proc.wait()
+                raise AssistantErr("Speed conversion timed out. Please try again.")
+            finally:
+                with contextlib.suppress(OSError):
+                    if os.path.exists(temp_out):
+                        os.remove(temp_out)
+
+        dur = int(await asyncio.get_running_loop().run_in_executor(None, check_duration, out))
+        if dur <= 0:
+            raise AssistantErr("Converted audio is invalid. Please retry.")
         played, con_seconds = speed_converter(playing[0]["played"], speed)
         duration_min = seconds_to_min(dur)
-        is_video = playing[0]["streamtype"] == "video"
         ffmpeg_params = f"-ss {played} -to {duration_min}"
         stream = dynamic_media_stream(path=out, video=is_video, ffmpeg_params=ffmpeg_params)
 
         if chat_id in db and db[chat_id] and db[chat_id][0].get("file") == file_path:
+            old_duration = db[chat_id][0].get("dur")
+            old_seconds = db[chat_id][0].get("seconds")
             await assistant.play(chat_id, stream)
             db[chat_id][0].update({
                 "played": con_seconds,
@@ -215,8 +246,8 @@ class Call:
                 "seconds": dur,
                 "speed_path": out,
                 "speed": speed,
-                "old_dur": db[chat_id][0].get("dur"),
-                "old_second": db[chat_id][0].get("seconds"),
+                "old_dur": old_duration,
+                "old_second": old_seconds,
             })
         else:
             raise AssistantErr("Stream mismatch during speedup.")
