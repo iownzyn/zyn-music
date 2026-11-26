@@ -168,7 +168,7 @@ async def stream(
                     "video" if is_video else "audio",
                     forceplay=forceplay,
                 )
-                img = await get_thumb(vidid)
+                img = thumbnail or await get_thumb(vidid, title=title)
                 button = stream_markup(_, chat_id)
                 run = await app.send_photo(
                     original_chat_id,
@@ -406,7 +406,7 @@ async def stream(
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 original_chat_id,
-                photo=result.get("display_thumb") or config.SOUNCLOUD_IMG_URL,
+                photo=result.get("display_thumb") or result.get("thumb") or config.SOUNCLOUD_IMG_URL,
                 caption=_["stream_1"].format(
                     config.SUPPORT_CHAT, f"[{source_label}] {title}"[:23], duration_min, user_name
                 ),
