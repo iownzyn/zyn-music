@@ -21,7 +21,7 @@ HELP_LABELS = {
     13: "Image",
     14: "Logs",
     15: "Loop",
-    16: "Group",
+    16: "Group Commands",
     17: "Masti",
     18: "Mass Actions",
     19: "Ping",
