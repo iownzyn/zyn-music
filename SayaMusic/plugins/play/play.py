@@ -2,6 +2,7 @@
 import asyncio
 import aiohttp
 import random
+import re
 import string
 
 from pyrogram import filters
@@ -77,8 +78,8 @@ async def riteshyt_search_command(client, message: Message):
         duration = item.get("duration") or "Unknown"
         link = item.get("link") or f"https://www.youtube.com/watch?v={item['id']}"
         title = str(item.get("title", "Track")).replace("[", "(").replace("]", ")")
-        lines.append(f"{number}. {title} · {duration}\\n{link}")
-    await status.edit_text("\\n".join(lines), disable_web_page_preview=True)
+        lines.append(f"{number}. {title} · {duration}\n{link}")
+    await status.edit_text("\n".join(lines), disable_web_page_preview=True)
 
 
 async def _play_artwork(video_id, fallback):
@@ -323,7 +324,7 @@ async def play_command(
                     spotify_meta = await Spotify.metadata(url)
                 except Exception as e:
                     return await mystic.edit_text(
-                        f"{_['play_3']}\\nSpotify metadata error: {type(e).__name__}"
+                        f"{_['play_3']}\nSpotify metadata error: {type(e).__name__}"
                     )
 
                 # Spotify Web API supplies catalogue metadata, not a playable
@@ -599,7 +600,7 @@ async def play_command(
                 log_label = "Youtube Track"
         except Exception as e:
             return await mystic.edit_text(
-                f"{_['play_3']}\\n"
+                f"{_['play_3']}\n"
                 f"No supported audio match found ({type(e).__name__}). Try another query."
             )
 
