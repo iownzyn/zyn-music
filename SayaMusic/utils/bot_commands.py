@@ -62,7 +62,7 @@ def _literal_commands(node):
 def _discover_commands():
     plugin_root = Path(__file__).resolve().parents[1] / "plugins"
     discovered = set()
-    for source in plugin_root.rglob("*.py"):
+    for source in plugin_root.glob("*/*.py"):
         try:
             tree = ast.parse(source.read_text(encoding="utf-8"))
         except (OSError, SyntaxError, UnicodeError):
