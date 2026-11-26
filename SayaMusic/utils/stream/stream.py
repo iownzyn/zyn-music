@@ -276,10 +276,10 @@ async def stream(
                 )
                 caption = (
                     f"♫ {jamendo_title}\n"
-                    f"Artist: {artist}\\n"
-                    f"Source: Jamendo\\n"
-                    f"Licence: {license_url}\\n"
-                    f"Track: {jamendo_share}\\n"
+                    f"Artist: {artist}\n"
+                    f"Source: Jamendo\n"
+                    f"Licence: {license_url}\n"
+                    f"Track: {jamendo_share}\n"
                     f"Requested by: {user_name}"
                 )
                 run = await app.send_photo(
