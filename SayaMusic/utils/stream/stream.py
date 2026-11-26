@@ -544,41 +544,6 @@ async def stream(
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
 
-    elif streamtype == "riteshyt":
-        link = result["link"]
-        title = result["title"]
-        duration_min = result.get("duration_min") or "00:00"
-        thumbnail = result.get("thumb") or config.STREAM_IMG_URL
-
-        if await is_active_chat(chat_id):
-            await put_queue_index(
-                chat_id, original_chat_id, "index_url", title, duration_min,
-                user_name, link, "audio",
-            )
-            position = len(db.get(chat_id)) - 1
-            button = aq_markup(_, chat_id)
-            await mystic.edit_text(
-                text=_["queue_4"].format(position, title[:27], duration_min, user_name),
-                reply_markup=InlineKeyboardMarkup(button),
-            )
-        else:
-            if not forceplay:
-                db[chat_id] = []
-            await StreamController.join_call(chat_id, original_chat_id, link, video=False)
-            await put_queue_index(
-                chat_id, original_chat_id, "index_url", title, duration_min,
-                user_name, link, "audio", forceplay=forceplay,
-            )
-            button = stream_markup(_, chat_id)
-            run = await app.send_photo(
-                original_chat_id,
-                photo=thumbnail,
-                caption=_["stream_1"].format(link, title[:23], duration_min, user_name),
-                reply_markup=InlineKeyboardMarkup(button),
-            )
-            db[chat_id][0]["mystic"] = run
-            db[chat_id][0]["markup"] = "tg"
-            await mystic.delete()
 
     elif streamtype == "index":
         link = result
