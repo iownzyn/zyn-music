@@ -323,11 +323,7 @@ async def play_command(
                         await mystic.delete()
                         return await play_logs(message, streamtype="YouTube title → Jamendo")
 
-                    return await mystic.edit_text(
-                        "YouTube par track mil gaya, lekin SoundCloud aur Jamendo ke "
-                        "authorized playable catalogue mein audio match nahi mila. "
-                        "Isliye bina licensed audio source ke VC playback start nahi kiya."
-                    )
+                    return await mystic.edit_text("Can't find this song, try another song.")
 
         elif await Spotify.valid(url):
             spotify = True
@@ -378,9 +374,7 @@ async def play_command(
                     await mystic.delete()
                     return await play_logs(message, streamtype="Spotify match → Jamendo")
 
-                return await mystic.edit_text(
-                    "Spotify par track mil gaya, lekin SoundCloud aur Jamendo ke authorized playable catalogue mein match nahi mila."
-                )
+                return await mystic.edit_text("Can't find this song, try another song.")
 
             elif "playlist" in url:
                 try:
