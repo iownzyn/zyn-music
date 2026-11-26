@@ -48,7 +48,7 @@ async def helper_private(client: Client, update: Union[Message, types.CallbackQu
 @app.on_message(filters.command(["help"]) & filters.group & ~BANNED_USERS)
 @LanguageStart
 
-async def helper_group(client: Client, message: Message):
+async def helper_group(client: Client, message: Message, _):
     text = (
         "**𝐙𝐘𝐍 𝐌𝐔𝐒𝐈𝐂 — GROUP COMMANDS**\n\n"
         "**Music**\n"
