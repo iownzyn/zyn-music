@@ -381,7 +381,7 @@ async def stream(
             position = len(db.get(chat_id)) - 1
             await app.send_message(
                 chat_id=original_chat_id,
-                text=_[ "queue_4" ].format(
+                text=_["queue_4"].format(
                     position, f"[JAMENDO] {title}"[:27], duration_min, user_name
                 ),
                 reply_markup=InlineKeyboardMarkup(aq_markup(_, chat_id)),
@@ -397,7 +397,7 @@ async def stream(
                 user_name, audio_url, "audio", forceplay=forceplay,
             )
             caption = (
-                f"♫ {title}\\n"
+                f"♫ {title}\n"
                 f"Artist: {artist}\\n"
                 f"Source: Jamendo\\n"
                 f"Requested by: {user_name}"
@@ -575,7 +575,7 @@ async def stream(
                 "video" if is_video else "audio",
                 forceplay=forceplay,
             )
-            img = await get_thumb(vidid)
+            img = thumbnail or await get_thumb(vidid, title=title, duration=duration_min)
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 original_chat_id,
