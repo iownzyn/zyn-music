@@ -360,6 +360,57 @@ async def stream(
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "stream"
 
+    elif streamtype == "jamendo":
+        audio_url = result.get("audio")
+        title = result.get("name") or "Unknown track"
+        artist = result.get("artist_name") or "Unknown artist"
+        duration_seconds = int(result.get("duration") or 0)
+        duration_min = (
+            f"{duration_seconds // 60}:{duration_seconds % 60:02d}"
+            if duration_seconds else "00:00"
+        )
+        thumbnail = result.get("image") or config.SOUNCLOUD_IMG_URL
+        if not audio_url:
+            raise AssistantErr("Can't find this song, try another song.")
+
+        if await is_active_chat(chat_id):
+            await put_queue_index(
+                chat_id, original_chat_id, "index_url", title, duration_min,
+                user_name, audio_url, "audio",
+            )
+            position = len(db.get(chat_id)) - 1
+            await app.send_message(
+                chat_id=original_chat_id,
+                text=_[ "queue_4" ].format(
+                    position, f"[JAMENDO] {title}"[:27], duration_min, user_name
+                ),
+                reply_markup=InlineKeyboardMarkup(aq_markup(_, chat_id)),
+            )
+        else:
+            if not forceplay:
+                db[chat_id] = []
+            await StreamController.join_call(
+                chat_id, original_chat_id, audio_url, video=False
+            )
+            await put_queue_index(
+                chat_id, original_chat_id, "index_url", title, duration_min,
+                user_name, audio_url, "audio", forceplay=forceplay,
+            )
+            caption = (
+                f"♫ {title}\\n"
+                f"Artist: {artist}\\n"
+                f"Source: Jamendo\\n"
+                f"Requested by: {user_name}"
+            )
+            run = await app.send_photo(
+                original_chat_id,
+                photo=thumbnail,
+                caption=caption,
+                reply_markup=InlineKeyboardMarkup(stream_markup(_, chat_id)),
+            )
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "tg"
+
     elif streamtype == "soundcloud":
         file_path = result["filepath"]
         title = result.get("display_title") or result["title"]
