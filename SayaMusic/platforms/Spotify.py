@@ -1,6 +1,7 @@
 # Saya Music
 import asyncio
 import re
+import time
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -14,6 +15,7 @@ class SpotifyAPI:
         self.regex = r"^https:\/\/open\.spotify\.com\/.+"
         self.client_id = config.SPOTIFY_CLIENT_ID
         self.client_secret = config.SPOTIFY_CLIENT_SECRET
+        self._track_cache = {}
         if self.client_id and self.client_secret:
             self.client_credentials_manager = SpotifyClientCredentials(
                 self.client_id, self.client_secret
@@ -26,7 +28,6 @@ class SpotifyAPI:
 
     async def valid(self, link: str) -> bool:
         return bool(re.search(self.regex, link or ""))
-
 
     async def search(self, query: str):
         """Search Spotify metadata only; never returns an audio stream."""
@@ -58,7 +59,16 @@ class SpotifyAPI:
     async def track(self, link: str):
         if not self.spotify:
             raise RuntimeError("Spotify credentials not configured")
-        track = self.spotify.track(link)
+
+        now = time.monotonic()
+        cached = self._track_cache.get(link)
+        if cached and now - cached[0] < 600:
+            details = dict(cached[1])
+            return details, details["vidid"]
+
+        # Spotipy is synchronous. Keep its network request off the event loop
+        # so assistant joins, callbacks and other groups stay responsive.
+        track = await asyncio.to_thread(self.spotify.track, link)
         info = track["name"]
         artists = []
         for artist in track["artists"]:
@@ -66,27 +76,34 @@ class SpotifyAPI:
             if fetched and "Various Artists" not in fetched:
                 artists.append(fetched)
                 info += f" {fetched}"
+
         results = VideosSearch(info, limit=1)
         data = await results.next()
-        r = data["result"][0]
+        found = data.get("result") or []
+        if not found:
+            raise RuntimeError("No matching playable track was found")
+        result = found[0]
         album_images = (track.get("album") or {}).get("images") or []
         spotify_artwork = album_images[0].get("url", "") if album_images else ""
         track_details = {
-            # Keep the YouTube result ID/link for the existing selection flow,
-            # while using Spotify's canonical metadata and album artwork.
             "title": f"{track['name']} - {', '.join(artists)}" if artists else track["name"],
-            "link": r["link"],
-            "vidid": r["id"],
-            "duration_min": r["duration"],
-            "thumb": spotify_artwork or r["thumbnails"][0]["url"].split("?")[0],
+            "link": result["link"],
+            "vidid": result["id"],
+            "duration_min": result["duration"],
+            "thumb": spotify_artwork or result["thumbnails"][0]["url"].split("?")[0],
             "spotify_url": (track.get("external_urls") or {}).get("spotify", ""),
         }
+        self._track_cache[link] = (now, dict(track_details))
+        # Bound memory use; the cache is deliberately short-lived.
+        if len(self._track_cache) > 256:
+            oldest = min(self._track_cache, key=lambda key: self._track_cache[key][0])
+            self._track_cache.pop(oldest, None)
         return track_details, track_details["vidid"]
 
     async def playlist(self, url):
         if not self.spotify:
             raise RuntimeError("Spotify credentials not configured")
-        playlist = self.spotify.playlist(url)
+        playlist = await asyncio.to_thread(self.spotify.playlist, url)
         playlist_id = playlist["id"]
         results = []
         for item in playlist["tracks"]["items"]:
@@ -102,7 +119,7 @@ class SpotifyAPI:
     async def album(self, url):
         if not self.spotify:
             raise RuntimeError("Spotify credentials not configured")
-        album = self.spotify.album(url)
+        album = await asyncio.to_thread(self.spotify.album, url)
         album_id = album["id"]
         results = []
         for item in album["tracks"]["items"]:
@@ -117,10 +134,12 @@ class SpotifyAPI:
     async def artist(self, url):
         if not self.spotify:
             raise RuntimeError("Spotify credentials not configured")
-        artistinfo = self.spotify.artist(url)
+        artistinfo, artisttoptracks = await asyncio.gather(
+            asyncio.to_thread(self.spotify.artist, url),
+            asyncio.to_thread(self.spotify.artist_top_tracks, url),
+        )
         artist_id = artistinfo["id"]
         results = []
-        artisttoptracks = self.spotify.artist_top_tracks(url)
         for item in artisttoptracks["tracks"]:
             info = item["name"]
             for artist in item["artists"]:
