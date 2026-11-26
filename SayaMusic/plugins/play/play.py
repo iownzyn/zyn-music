@@ -546,38 +546,66 @@ async def play_command(
             query = query.replace("-v", "")
 
 
-        spotify_meta = await Spotify.search(query)
+        # Resolve Spotify metadata and SoundCloud audio in parallel for speed.
+        # Spotify Web API provides metadata, not a full-track Telegram VC stream.
+        try:
+            spotify_meta, soundcloud_match = await asyncio.gather(
+                Spotify.search(query),
+                SoundCloud.search_and_download(query),
+                return_exceptions=True,
+            )
+        except Exception:
+            spotify_meta, soundcloud_match = None, None
+
+        if isinstance(spotify_meta, Exception):
+            spotify_meta = None
+        if isinstance(soundcloud_match, Exception):
+            soundcloud_match = None
+
         search_query = (
             f"{spotify_meta['title']} {spotify_meta['artist']}".strip()
             if spotify_meta else query
         )
 
-        # If Spotify recognizes the request, keep its canonical title/artist
-        # and try the supported audio provider before the final catalogue
-        # fallback. Spotify itself does not expose full-track audio streams.
-        if spotify_meta:
-            fallback = await SoundCloud.search_and_download(search_query)
-            if fallback:
-                details, _fallback_path = fallback
-                details["display_title"] = search_query
-                details["display_thumb"] = spotify_meta["thumb"] or details.get("thumb")
-                details["display_source"] = "SOUNDCLOUD · SPOTIFY MATCH"
-                try:
-                    await stream(
-                        _, mystic, user_id, details, chat_id, user_name,
-                        message.chat.id, video=False, streamtype="soundcloud",
-                        forceplay=bool(fplay),
-                    )
-                except Exception as stream_error:
-                    err = (
-                        stream_error
-                        if type(stream_error).__name__ == "AssistantErr"
-                        else _["general_2"].format(type(stream_error).__name__)
-                    )
-                    return await mystic.edit_text(err)
-                await mystic.delete()
-                return await play_logs(message, streamtype="Spotify match → SoundCloud")
+        # If the first parallel SoundCloud search missed, retry once using
+        # Spotify's canonical title + artist for a more accurate match.
+        if not soundcloud_match and spotify_meta and search_query.lower() != query.lower():
+            try:
+                soundcloud_match = await SoundCloud.search_and_download(search_query)
+            except Exception:
+                soundcloud_match = None
 
+        if soundcloud_match:
+            details, _fallback_path = soundcloud_match
+            details["display_title"] = search_query
+            details["display_thumb"] = (
+                (spotify_meta or {}).get("thumb") or details.get("thumb")
+            )
+            details["display_source"] = (
+                "SOUNDCLOUD · SPOTIFY MATCH" if spotify_meta
+                else "SOUNDCLOUD"
+            )
+            try:
+                await stream(
+                    _, mystic, user_id, details, chat_id, user_name,
+                    message.chat.id, video=False, streamtype="soundcloud",
+                    forceplay=bool(fplay),
+                )
+            except Exception as stream_error:
+                err = (
+                    stream_error
+                    if type(stream_error).__name__ == "AssistantErr"
+                    else _["general_2"].format(type(stream_error).__name__)
+                )
+                return await mystic.edit_text(err)
+            await mystic.delete()
+            return await play_logs(
+                message,
+                streamtype="Spotify + SoundCloud → SoundCloud" if spotify_meta
+                else "SoundCloud search",
+            )
+
+        # Jamendo is the final playable catalogue fallback.
         jamendo_track = await _play_jamendo_match(
             _, mystic, user_id, search_query, chat_id, user_name,
             message.chat.id, forceplay=bool(fplay),
@@ -586,31 +614,11 @@ async def play_command(
             await mystic.delete()
             return await play_logs(
                 message,
-                streamtype="Spotify match → Jamendo" if spotify_meta else "Jamendo search",
+                streamtype="Spotify metadata → Jamendo" if spotify_meta
+                else "Jamendo search",
             )
 
-        # Spotify had no playable match in SoundCloud or Jamendo. YouTube is
-        # kept as the final metadata fallback; audio playback remains subject
-        # to the existing authorized-source policy in the stream layer.
-        # Spotify had no catalogue match, or the matching audio was not
-        # available from the supported provider: use the final YouTube
-        # metadata lookup, then let the existing stream policy decide.
-        try:
-            details, track_id = await YouTube.track(search_query)
-            if spotify_meta:
-                details["title"] = search_query
-                details["thumb"] = spotify_meta["thumb"] or details.get("thumb", "")
-                details["spotify_url"] = spotify_meta["spotify_url"]
-                internal_type = "youtube"
-                log_label = "Spotify metadata → final catalogue fallback"
-            else:
-                internal_type = "youtube"
-                log_label = "Youtube Track"
-        except Exception as e:
-            return await mystic.edit_text(
-                f"{_['play_3']}\n"
-                f"No supported audio match found ({type(e).__name__}). Try another query."
-            )
+        return await mystic.edit_text("Can't find this song, try another song.")
 
     if str(playmode) == "Direct":
         if not plist_type:
