@@ -1,5 +1,6 @@
 # Saya Music
 import asyncio
+import aiohttp
 import random
 import string
 
@@ -28,6 +29,56 @@ from SayaMusic.utils.inline import (
 from SayaMusic.utils.logger import play_logs
 from SayaMusic.utils.thumbnails import get_thumb
 from SayaMusic.utils.stream.stream import stream
+
+
+async def _riteshyt_search(query, limit=5):
+    """Search the configured RiteshYT provider and return its video results."""
+    api_key = getattr(config, "RITESHYT_API_KEY", "")
+    base_url = getattr(config, "RITESHYT_API_URL", "https://api.riteshyt.in").rstrip("/")
+    if not api_key:
+        return []
+    timeout = aiohttp.ClientTimeout(total=10)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(
+                f"{base_url}/search",
+                params={"q": query, "limit": max(1, min(int(limit), 10)), "api_key": api_key},
+            ) as response:
+                if response.status != 200:
+                    return []
+                payload = await response.json(content_type=None)
+        results = payload.get("result", []) if isinstance(payload, dict) else []
+        return [item for item in results if isinstance(item, dict) and item.get("id") and item.get("title")]
+    except Exception as exc:
+        print(f"RiteshYT search error: {type(exc).__name__}")
+        return []
+
+
+def _riteshyt_audio_url(video_id):
+    api_key = getattr(config, "RITESHYT_API_KEY", "")
+    base_url = getattr(config, "RITESHYT_API_URL", "https://api.riteshyt.in").rstrip("/")
+    if not api_key or not video_id or not re.fullmatch(r"[A-Za-z0-9_-]{6,20}", str(video_id)):
+        return None
+    return f"{base_url}/api/musicbot/play/{video_id}?api_key={api_key}"
+
+
+@app.on_message(filters.command("search") & filters.group & ~BANNED_USERS)
+@capture_err
+async def riteshyt_search_command(client, message: Message):
+    if len(message.command) < 2:
+        return await message.reply_text("Usage: /search song name")
+    query = message.text.split(None, 1)[1].strip()
+    status = await message.reply_text("🔎 RiteshYT par search ho raha hai...")
+    results = await _riteshyt_search(query, limit=5)
+    if not results:
+        return await status.edit_text("RiteshYT par koi result nahi mila. API key/config check karein.")
+    lines = ["🎧 **RITESHYT SEARCH RESULTS**", ""]
+    for number, item in enumerate(results, 1):
+        duration = item.get("duration") or "Unknown"
+        link = item.get("link") or f"https://www.youtube.com/watch?v={item['id']}"
+        title = str(item.get("title", "Track")).replace("[", "(").replace("]", ")")
+        lines.append(f"{number}. {title} · {duration}\\n{link}")
+    await status.edit_text("\\n".join(lines), disable_web_page_preview=True)
 
 
 async def _play_artwork(video_id, fallback):
@@ -468,6 +519,37 @@ async def play_command(
         query = message.text.split(None, 1)[1]
         if "-v" in query:
             query = query.replace("-v", "")
+
+        # Prefer the configured RiteshYT provider for text searches.
+        # Its dedicated music-bot redirect is passed to the existing VC index-stream queue.
+        if not video and getattr(config, "RITESHYT_API_KEY", ""):
+            provider_results = await _riteshyt_search(query, limit=1)
+            if provider_results:
+                selected = provider_results[0]
+                audio_url = _riteshyt_audio_url(selected.get("id"))
+                if audio_url:
+                    duration = str(selected.get("duration") or "00:00")
+                    try:
+                        duration_seconds = time_to_seconds(duration) if duration != "00:00" else 0
+                    except Exception:
+                        duration_seconds = 0
+                    if duration_seconds and duration_seconds > config.DURATION_LIMIT:
+                        return await mystic.edit_text(_["play_6"].format(config.DURATION_LIMIT_MIN, app.mention))
+                    try:
+                        await stream(
+                            _, mystic, user_id, audio_url, chat_id, user_name,
+                            message.chat.id, video=False, streamtype="index",
+                            forceplay=bool(fplay),
+                        )
+                    except Exception as provider_error:
+                        err = (
+                            provider_error
+                            if type(provider_error).__name__ == "AssistantErr"
+                            else _["general_2"].format(type(provider_error).__name__)
+                        )
+                        return await mystic.edit_text(err)
+                    await mystic.delete()
+                    return await play_logs(message, streamtype="RiteshYT MusicBot Stream", query=selected.get("title", query))
 
         spotify_meta = await Spotify.search(query)
         search_query = (
