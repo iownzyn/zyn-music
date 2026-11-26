@@ -18,7 +18,6 @@ DESCRIPTIONS = {
     "start": "Open ZYN MUSIC and its main menu",
     "help": "Browse all bot features and command categories",
     "play": "Play a song in the group voice chat",
-    "search": "Search tracks on RiteshYT",
     "vplay": "Play HD video in the group voice chat",
     "pause": "Pause the current song",
     "resume": "Resume the paused song",
@@ -42,7 +41,7 @@ DESCRIPTIONS = {
 
 COMMAND_PATTERN = re.compile(r"^[a-z0-9_]{1,32}$")
 PRIORITY = [
-    "start", "help", "play", "search", "vplay", "pause", "resume", "skip", "stop",
+    "start", "help", "play", "vplay", "pause", "resume", "skip", "stop",
     "end", "queue", "seek", "seekback", "forward", "back", "forward10",
     "back10", "rewind10", "speed", "volume", "groupmode", "chess", "dice",
 ]
