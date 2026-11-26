@@ -27,7 +27,7 @@ from SayaMusic.utils.inline import (
 )
 from SayaMusic.utils.logger import play_logs
 from SayaMusic.utils.thumbnails import get_thumb
-from SayaMusic.utils.stream.stream import stream
+from SayaMusic.utils.stream.stream import stream, _jamendo_search_track
 
 
 
@@ -39,6 +39,32 @@ async def _play_artwork(video_id, fallback):
     except Exception:
         pass
     return fallback
+
+
+async def _play_jamendo_match(_, mystic, user_id, query, chat_id, user_name, original_chat_id, forceplay=False):
+    """Play an authorized Jamendo catalogue match as the final licensed provider."""
+    track = await _jamendo_search_track(query)
+    if not track:
+        return False
+
+    audio_url = track.get("audio")
+    if not audio_url:
+        return False
+
+    duration = int(track.get("duration") or 0)
+    if duration and duration > config.DURATION_LIMIT:
+        return False
+
+    try:
+        await stream(
+            _, mystic, user_id, audio_url, chat_id, user_name,
+            original_chat_id, video=False, streamtype="index",
+            forceplay=bool(forceplay),
+        )
+    except Exception:
+        return False
+
+    return track
 
 
 def _safe_play_status_text(_, channel=None):
@@ -302,9 +328,16 @@ async def play_command(
                     await mystic.delete()
                     return await play_logs(message, streamtype="Spotify match → SoundCloud")
 
+                jamendo_track = await _play_jamendo_match(
+                    _, mystic, user_id, search_query, chat_id, user_name,
+                    message.chat.id, forceplay=bool(fplay),
+                )
+                if jamendo_track:
+                    await mystic.delete()
+                    return await play_logs(message, streamtype="Spotify match → Jamendo")
+
                 return await mystic.edit_text(
-                    "Spotify track mil gaya, lekin is track ka supported playable audio source abhi nahi mila. "
-                    "Spotify API khud full song audio stream provide nahi karti. Thodi der baad dobara try karein."
+                    "Spotify par track mil gaya, lekin SoundCloud aur Jamendo ke authorized playable catalogue mein match nahi mila."
                 )
 
             elif "playlist" in url:
@@ -503,6 +536,20 @@ async def play_command(
                 await mystic.delete()
                 return await play_logs(message, streamtype="Spotify match → SoundCloud")
 
+        jamendo_track = await _play_jamendo_match(
+            _, mystic, user_id, search_query, chat_id, user_name,
+            message.chat.id, forceplay=bool(fplay),
+        )
+        if jamendo_track:
+            await mystic.delete()
+            return await play_logs(
+                message,
+                streamtype="Spotify match → Jamendo" if spotify_meta else "Jamendo search",
+            )
+
+        # Spotify had no playable match in SoundCloud or Jamendo. YouTube is
+        # kept as the final metadata fallback; audio playback remains subject
+        # to the existing authorized-source policy in the stream layer.
         # Spotify had no catalogue match, or the matching audio was not
         # available from the supported provider: use the final YouTube
         # metadata lookup, then let the existing stream policy decide.
