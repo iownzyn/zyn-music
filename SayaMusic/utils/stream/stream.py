@@ -1,6 +1,10 @@
 # Saya Music
 import os
+import re
+from difflib import SequenceMatcher
 from random import randint
+
+import aiohttp
 from typing import Union
 
 from pyrogram.types import InlineKeyboardMarkup
@@ -16,6 +20,62 @@ from SayaMusic.utils.pastebin import SAYABIN
 from SayaMusic.utils.stream.queue import put_queue, put_queue_index
 from SayaMusic.utils.thumbnails import get_thumb
 from SayaMusic.utils.errors import capture_internal_err
+
+
+def _normalize_track_name(value: str) -> str:
+    value = re.sub(r"\\([^)]*\\)|\\[[^]]*\\]", " ", (value or "").lower())
+    value = re.sub(r"\\b(official|video|audio|lyrics?|visualizer|4k|hd|full song)\\b", " ", value)
+    return re.sub(r"[^a-z0-9]+", " ", value).strip()
+
+
+async def _jamendo_search_track(query: str):
+    """Find a close Jamendo catalogue match and return its licensed stream URL."""
+    client_id = getattr(config, "JAMENDO_CLIENT_ID", "")
+    if not client_id or not query:
+        return None
+
+    params = {
+        "client_id": client_id,
+        "format": "json",
+        "limit": 10,
+        "namesearch": query,
+        "audioformat": "mp32",
+        "include": "licenses",
+    }
+    timeout = aiohttp.ClientTimeout(total=12)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(
+                "https://api.jamendo.com/v3.0/tracks/", params=params
+            ) as response:
+                if response.status != 200:
+                    print(f"Jamendo search failed: HTTP {response.status}")
+                    return None
+                payload = await response.json(content_type=None)
+    except Exception as exc:
+        print(f"Jamendo search error: {type(exc).__name__}")
+        return None
+
+    if (payload.get("headers") or {}).get("status") != "success":
+        return None
+
+    wanted = _normalize_track_name(query)
+    best, best_score = None, 0.0
+    for track in payload.get("results", []):
+        audio_url = track.get("audio")
+        track_name = track.get("name") or ""
+        if not audio_url or not audio_url.startswith("https://") or not track_name:
+            continue
+        candidate = _normalize_track_name(track_name)
+        score = SequenceMatcher(None, wanted, candidate).ratio()
+        wanted_words, candidate_words = set(wanted.split()), set(candidate.split())
+        if wanted_words:
+            score = max(score, len(wanted_words & candidate_words) / len(wanted_words))
+        if score > best_score:
+            best, best_score = track, score
+
+    # Avoid playing an unrelated catalogue result for a popular YouTube query.
+    return best if best and best_score >= 0.60 else None
 
 
 @capture_internal_err
@@ -154,33 +214,84 @@ async def stream(
 
         file_path, direct = None, None
 
-        # YouTube search is used for metadata only. Do not attempt to extract
-        # or download YouTube media from the cloud worker.
+        # YouTube Data API supplies search metadata only. Resolve audio from
+        # Jamendo's official stream field; never extract YouTube media here.
         if not is_video:
-            fallback = await SoundCloud.search_and_download(title)
-            if fallback:
-                fallback_details, _fallback_path = fallback
-                # Preserve preferred catalogue metadata while clearly marking
-                # the actual provider that supplies the playable audio.
-                fallback_details["display_title"] = result.get("title") or fallback_details.get("title")
-                fallback_details["display_thumb"] = result.get("thumb") or fallback_details.get("thumb")
-                fallback_details["display_source"] = "SOUNDCLOUD"
-                return await stream(
-                    _,
-                    mystic,
-                    user_id,
-                    fallback_details,
+            jamendo_track = await _jamendo_search_track(title)
+            if not jamendo_track:
+                raise AssistantErr(
+                    "YouTube par song mil gaya, lekin uska close match Jamendo ke "
+                    "licensed catalogue mein nahi mila. Is track ko VC mein play "
+                    "karne ke liye Jamendo par available version chahiye."
+                )
+
+            audio_url = jamendo_track.get("audio")
+            artist = jamendo_track.get("artist_name") or "Unknown artist"
+            license_url = jamendo_track.get("license_ccurl") or "Jamendo terms"
+            duration_seconds = int(jamendo_track.get("duration") or 0)
+            jamendo_duration = (
+                f"{duration_seconds // 60}:{duration_seconds % 60:02d}"
+                if duration_seconds else duration_min
+            )
+            jamendo_title = jamendo_track.get("name") or title
+            jamendo_image = jamendo_track.get("image") or thumbnail or config.SOUNCLOUD_IMG_URL
+            jamendo_share = jamendo_track.get("shareurl") or "https://www.jamendo.com/"
+
+            if await is_active_chat(chat_id):
+                await put_queue_index(
                     chat_id,
-                    user_name,
                     original_chat_id,
-                    video=False,
-                    streamtype="soundcloud",
+                    "index_url",
+                    jamendo_title,
+                    jamendo_duration,
+                    user_name,
+                    audio_url,
+                    "audio",
+                )
+                position = len(db.get(chat_id)) - 1
+                await app.send_message(
+                    chat_id=original_chat_id,
+                    text=_["queue_4"].format(
+                        position, f"[JAMENDO] {jamendo_title}"[:27],
+                        jamendo_duration, user_name
+                    ),
+                    reply_markup=InlineKeyboardMarkup(aq_markup(_, chat_id)),
+                )
+            else:
+                if not forceplay:
+                    db[chat_id] = []
+                await StreamController.join_call(
+                    chat_id, original_chat_id, audio_url, video=False
+                )
+                await put_queue_index(
+                    chat_id,
+                    original_chat_id,
+                    "index_url",
+                    jamendo_title,
+                    jamendo_duration,
+                    user_name,
+                    audio_url,
+                    "audio",
                     forceplay=forceplay,
                 )
-            raise AssistantErr(
-                "Is track ka authorized audio source nahi mila. "
-                "Telegram par audio file bhej kar usse play karein, ya koi aur track try karein."
-            )
+                caption = (
+                    f"♫ {jamendo_title}\\n"
+                    f"Artist: {artist}\\n"
+                    f"Source: Jamendo\\n"
+                    f"Licence: {license_url}\\n"
+                    f"Track: {jamendo_share}\\n"
+                    f"Requested by: {user_name}"
+                )
+                run = await app.send_photo(
+                    original_chat_id,
+                    photo=jamendo_image,
+                    caption=caption,
+                    reply_markup=InlineKeyboardMarkup(stream_markup(_, chat_id)),
+                )
+                db[chat_id][0]["mystic"] = run
+                db[chat_id][0]["markup"] = "tg"
+            return
+
 
         # Preserve the existing video path; audio playback does not use YouTube extraction.
         try:
