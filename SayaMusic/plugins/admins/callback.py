@@ -90,7 +90,7 @@ async def manage_callback(client, callback: CallbackQuery, _):
             show_alert=True,
         )
 
-    if command not in {"Pause", "Resume", "Stop", "End", "Close", "Volume", "Speed", "Loop", "Shuffle", "Skip", "Replay", "1", "2", "3", "4"}:
+    if command not in {"Pause", "Resume", "Stop", "End", "Close", "Volume", "Speed", "Loop", "Shuffle", "Skip", "Replay", "Forward", "Back", "1", "2", "3", "4"}:
         return await callback.answer("Unsupported playback control.", show_alert=True)
 
     # Stop/End is always restricted to real group admins, even when group mode
@@ -354,9 +354,9 @@ async def handle_seek(callback: CallbackQuery, _, chat_id: int, command: str, us
     if "index_" in file_path or "live_" in file_path:
         return await callback.answer(_["admin_22"], show_alert=True)
     duration_played = int(playing[0]["played"])
-    duration_to_skip = 10 if int(command) in [1, 2] else 30
+    duration_to_skip = 10 if command in {"Forward", "Back"} or int(command) in [1, 2] else 30
     duration = playing[0]["dur"]
-    if int(command) in [1, 3]:
+    if command == "Back" or (command not in {"Forward", "Back"} and int(command) in [1, 3]):
         if (duration_played - duration_to_skip) <= 10:
             bet = seconds_to_min(duration_played)
             return await callback.answer(
